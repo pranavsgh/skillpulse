@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: skillpulse
+      POSTGRES_PASSWORD: skillpulse
+      POSTGRES_DB: skillpulse
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    env_file: .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    # Todo Both: add Dockerfile under backend/ once dependencies are finalized
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    # Todo Both: add Dockerfile under frontend/ once build is finalized
+
+volumes:
+  pgdata:

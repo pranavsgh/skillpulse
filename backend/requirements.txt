@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+pydantic
+sqlalchemy
+psycopg2-binary
+beautifulsoup4
+playwright
+feedparser
+requests
+anthropic
+loguru
+apscheduler
+python-dotenv
