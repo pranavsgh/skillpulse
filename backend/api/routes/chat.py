@@ -11,9 +11,10 @@ from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
 
-from anthropic import Anthropic
+from anthropic import Anthropic, APIError as AnthropicAPIError
 from fastapi import APIRouter, Depends, HTTPException
 from google import genai
+from google.genai.errors import APIError as GeminiAPIError
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
@@ -166,21 +167,27 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db)):
     history = list(convo.messages or [])
     history.append({"role": "user", "content": payload.message})
 
-    if is_project_related(payload.message):
-        context = build_context(db)
-        system = SYSTEM_PROMPT_TEMPLATE.format(context=context)
-        if payload.target_role:
-            system += f"\n\nThe user is targeting: {payload.target_role} roles."
+    try:
+        if is_project_related(payload.message):
+            context = build_context(db)
+            system = SYSTEM_PROMPT_TEMPLATE.format(context=context)
+            if payload.target_role:
+                system += f"\n\nThe user is targeting: {payload.target_role} roles."
 
-        response = _get_client().messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=1024,
-            system=system,
-            messages=history,
-        )
-        reply = response.content[0].text
-    else:
-        reply = _call_gemini(payload.message)
+            response = _get_client().messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=1024,
+                system=system,
+                messages=history,
+            )
+            reply = response.content[0].text
+        else:
+            reply = _call_gemini(payload.message)
+    except (AnthropicAPIError, GeminiAPIError) as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="The AI service is temporarily unavailable. Please try again shortly.",
+        ) from exc
 
     history.append({"role": "assistant", "content": reply})
     convo.messages = history
