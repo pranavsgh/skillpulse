@@ -1,10 +1,12 @@
 """GET /api/jobs with pagination + search."""
 
 from fastapi import APIRouter, Depends, Query
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from backend.api.deps import get_db
-from backend.api.schemas import JobListOut
+from backend.api.schemas import JobListOut, JobOut
+from backend.db.models import Job
 
 router = APIRouter()
 
@@ -18,6 +20,37 @@ def list_jobs(
     limit: int = Query(default=25),
     db: Session = Depends(get_db),
 ):
-    # Todo Pranav: query jobs, filter by job_type/source/search (title/company ILIKE),
-    # paginate with skip/limit, return {total, jobs}
-    raise NotImplementedError
+    query = db.query(Job)
+
+    if job_type:
+        query = query.filter(Job.job_type == job_type)
+    if source:
+        query = query.filter(Job.source == source)
+    if search:
+        query = query.filter(
+            or_(
+                Job.title.ilike(f"%{search}%"),
+                Job.company.ilike(f"%{search}%"),
+            )
+        )
+
+    total = query.count()
+    jobs = query.offset(skip).limit(limit).all()
+
+    return JobListOut(
+        total=total,
+        jobs=[
+            JobOut(
+                id=j.id,
+                title=j.title,
+                company=j.company,
+                location=j.location,
+                url=j.url,
+                job_type=j.job_type.value,
+                source=j.source.value,
+                scraped_at=str(j.scraped_at),
+                skills=[s.name for s in j.skills],
+            )
+            for j in jobs
+        ],
+    )
