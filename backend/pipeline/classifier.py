@@ -1,5 +1,7 @@
 """Job type classifier - regex scoring of title + description."""
 
+import re
+
 INTERN_PATTERNS = [
     r"\bintern(ship)?\b",
     r"\bco-op\b",
@@ -17,7 +19,27 @@ NEW_GRAD_PATTERNS = [
 ]
 
 
+TITLE_WEIGHT = 3
+DESCRIPTION_WEIGHT = 1
+
+
+def _score(patterns: list[str], title: str, description: str) -> int:
+    score = 0
+    for pattern in patterns:
+        if re.search(pattern, title, re.IGNORECASE):
+            score += TITLE_WEIGHT
+        if re.search(pattern, description, re.IGNORECASE):
+            score += DESCRIPTION_WEIGHT
+    return score
+
+
 def classify(title: str, description: str) -> str:
-    # Todo Both: score INTERN_PATTERNS vs NEW_GRAD_PATTERNS against title+description,
-    # higher score wins, default "new_grad"
-    raise NotImplementedError
+    title = title or ""
+    description = description or ""
+
+    intern_score = _score(INTERN_PATTERNS, title, description)
+    new_grad_score = _score(NEW_GRAD_PATTERNS, title, description)
+
+    if intern_score > new_grad_score:
+        return "internship"
+    return "new_grad"
