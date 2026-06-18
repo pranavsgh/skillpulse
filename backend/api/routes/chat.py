@@ -28,9 +28,7 @@ def _get_client() -> Anthropic:
     return Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 
-def _get_gemini_client() -> genai.Client:
-    return genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-
+_gemini_client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
 GEMINI_MODEL = "gemini-2.5-flash-lite"
 
@@ -82,7 +80,7 @@ def is_project_related(message: str) -> bool:
 
 
 def _call_gemini(message: str) -> str:
-    response = _get_gemini_client().models.generate_content(
+    response = _gemini_client.models.generate_content(
         model=GEMINI_MODEL,
         contents=message,
     )
