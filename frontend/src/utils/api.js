@@ -21,4 +21,19 @@ export async function sendChatMessage(message, targetRole, sessionId) {
   return res.data;
 }
 
+export async function fetchSessions() {
+  const res = await client.get("/chat/sessions");
+  return res.data;
+}
+
+export async function fetchSession(sessionId) {
+  const res = await client.get(`/chat/sessions/${sessionId}`);
+  return res.data;
+}
+
+export async function deleteSession(sessionId) {
+  const res = await client.delete(`/chat/sessions/${sessionId}`);
+  return res.data;
+}
+
 export default client;

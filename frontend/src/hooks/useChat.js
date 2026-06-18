@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { sendChatMessage } from "../utils/api.js";
+import { useState, useEffect } from "react";
+import { sendChatMessage, fetchSession } from "../utils/api.js";
 
 const SESSION_KEY = "skillpulse-session-id";
 
-function getOrCreateSessionId() {
+export function getOrCreateSessionId() {
   let id = localStorage.getItem(SESSION_KEY);
   if (!id) {
     id = crypto.randomUUID();
@@ -12,11 +12,22 @@ function getOrCreateSessionId() {
   return id;
 }
 
-export default function useChat() {
+export function setCurrentSessionId(id) {
+  localStorage.setItem(SESSION_KEY, id);
+}
+
+export default function useChat(sessionId) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [targetRole, setTargetRole] = useState("");
-  const [sessionId] = useState(getOrCreateSessionId);
+
+  // Load messages from DB when session changes
+  useEffect(() => {
+    if (!sessionId) return;
+    fetchSession(sessionId)
+      .then((data) => setMessages(data.messages || []))
+      .catch(() => setMessages([]));
+  }, [sessionId]);
 
   async function send(message) {
     if (!message.trim()) return;
@@ -37,5 +48,9 @@ export default function useChat() {
     }
   }
 
-  return { messages, loading, send, targetRole, setTargetRole };
+  function clearMessages() {
+    setMessages([]);
+  }
+
+  return { messages, loading, send, targetRole, setTargetRole, clearMessages };
 }

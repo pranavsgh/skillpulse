@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from anthropic import Anthropic
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
@@ -32,7 +32,6 @@ SYSTEM_PROMPT_TEMPLATE = (
 
 
 def build_context(db: Session) -> str:
-    """Query top 15 skills per job_type and format into a context string."""
     lines = []
     for job_type in JobType:
         rows = (
@@ -61,6 +60,45 @@ def get_or_create_conversation(db: Session, session_id: str) -> Conversation:
         db.add(convo)
         db.flush()
     return convo
+
+
+@router.get("/sessions")
+def list_sessions(db: Session = Depends(get_db)):
+    """List all conversation sessions ordered by most recent."""
+    convos = (
+        db.query(Conversation)
+        .order_by(desc(Conversation.updated_at))
+        .all()
+    )
+    return [
+        {
+            "session_id": c.session_id,
+            "updated_at": str(c.updated_at),
+            "preview": c.messages[0]["content"][:60] + "..." if c.messages else "Empty chat",
+            "message_count": len(c.messages or []),
+        }
+        for c in convos
+    ]
+
+
+@router.get("/sessions/{session_id}")
+def get_session(session_id: str, db: Session = Depends(get_db)):
+    """Load messages for a specific session."""
+    convo = db.query(Conversation).filter_by(session_id=session_id).first()
+    if not convo:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return {"session_id": convo.session_id, "messages": convo.messages or []}
+
+
+@router.delete("/sessions/{session_id}")
+def delete_session(session_id: str, db: Session = Depends(get_db)):
+    """Delete a conversation session."""
+    convo = db.query(Conversation).filter_by(session_id=session_id).first()
+    if not convo:
+        raise HTTPException(status_code=404, detail="Session not found")
+    db.delete(convo)
+    db.commit()
+    return {"deleted": session_id}
 
 
 @router.post("/", response_model=ChatResponse)
