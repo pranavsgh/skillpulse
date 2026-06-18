@@ -9,4 +9,3 @@ google-genai
 loguru
 apscheduler
 python-dotenv
-google-genai
