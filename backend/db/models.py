@@ -21,8 +21,6 @@ class SkillCategory(str, enum.Enum):
 
 class Source(str, enum.Enum):
     simplify = "simplify"
-    indeed = "indeed"
-    linkedin = "linkedin"
 
 
 job_skills = Table(

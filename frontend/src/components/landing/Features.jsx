@@ -1,5 +1,5 @@
 const FEATURES = [
-  { title: "Scrapes the market", desc: "LinkedIn, Indeed, and Simplify postings, pulled continuously." },
+  { title: "Scrapes the market", desc: "Simplify postings, pulled continuously." },
   { title: "Surfaces trends", desc: "NLP-driven skill extraction ranks languages, frameworks, tools." },
   { title: "AI project advisor", desc: "Claude-powered chat recommends portfolio projects for your target role." },
 ];

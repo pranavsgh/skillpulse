@@ -7,7 +7,7 @@ from datetime import date
 from backend.db.database import SessionLocal
 from backend.db.models import Job, JobType, Source, SkillCount, job_skills
 from backend.pipeline.extractor import extract_skills
-from backend.scrapers import simplify, indeed
+from backend.scrapers import simplify
 
 
 def persist_job(db, job: dict) -> None:
@@ -55,18 +55,12 @@ def rebuild_skill_counts(db) -> None:
 def main():
     db = SessionLocal()
     try:
-        for scraper in (simplify, indeed):
-            print(f"Running {scraper.__name__}...")
-            try:
-                jobs = scraper.scrape()
-            except NotImplementedError:
-                print(f"  {scraper.__name__} not implemented yet, skipping.")
-                continue
-
-            for job in jobs:
-                persist_job(db, job)
-            db.commit()
-            print(f"  {len(jobs)} jobs scraped.")
+        print("Running simplify...")
+        jobs = simplify.scrape()
+        for job in jobs:
+            persist_job(db, job)
+        db.commit()
+        print(f"  {len(jobs)} jobs scraped.")
 
         rebuild_skill_counts(db)
         db.commit()

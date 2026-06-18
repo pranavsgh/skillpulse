@@ -10,8 +10,6 @@ export default function JobFilters({ filters, onChange }) {
       <select className="border rounded px-2 py-1">
         <option value="">All sources</option>
         <option value="simplify">Simplify</option>
-        <option value="indeed">Indeed</option>
-        <option value="linkedin">LinkedIn</option>
       </select>
     </div>
   );
