@@ -4,23 +4,47 @@ import SkillChart from "../components/dashboard/SkillChart.jsx";
 import SkillFilters from "../components/dashboard/SkillFilters.jsx";
 import TopSkillsBar from "../components/dashboard/TopSkillsBar.jsx";
 import Loading from "../components/shared/Loading.jsx";
-import { triggerScrape } from "../utils/api.js";
+import { triggerScrape, fetchJobs } from "../utils/api.js";
 
 export default function Dashboard() {
   const [filters, setFilters] = useState({});
-  const { skills, loading, error } = useSkills(filters);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const { skills, loading, error } = useSkills(filters, refreshKey);
   const [scraping, setScraping] = useState(false);
   const [scrapeMsg, setScrapeMsg] = useState("");
 
   async function handleScrape() {
     setScraping(true);
-    setScrapeMsg("");
+    setScrapeMsg("Scrape started...");
+
     try {
       await triggerScrape();
-      setScrapeMsg("Scrape started! New jobs will appear shortly.");
+      const before = await fetchJobs({ limit: 1 });
+      const beforeCount = before.total;
+
+      let attempts = 0;
+      const interval = setInterval(async () => {
+        attempts++;
+        try {
+          const after = await fetchJobs({ limit: 1 });
+          if (after.total > beforeCount) {
+            clearInterval(interval);
+            setScrapeMsg(`Done! ${after.total - beforeCount} new jobs added.`);
+            setRefreshKey((k) => k + 1);
+            setScraping(false);
+          } else if (attempts >= 24) {
+            clearInterval(interval);
+            setScrapeMsg("Scrape complete — no new jobs found.");
+            setRefreshKey((k) => k + 1);
+            setScraping(false);
+          }
+        } catch {
+          clearInterval(interval);
+          setScraping(false);
+        }
+      }, 5000);
     } catch {
       setScrapeMsg("Failed to start scrape.");
-    } finally {
       setScraping(false);
     }
   }
@@ -36,7 +60,7 @@ export default function Dashboard() {
           disabled={scraping}
           className="bg-pulse-600 text-white px-4 py-2 rounded text-sm hover:bg-pulse-800 disabled:opacity-50"
         >
-          {scraping ? "Scraping..." : "🔄 Refresh Data"}
+          {scraping ? "⏳ Scraping..." : "🔄 Refresh Data"}
         </button>
       </div>
       {scrapeMsg && <p className="text-sm text-pulse-600 mb-3">{scrapeMsg}</p>}
