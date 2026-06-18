@@ -7,7 +7,14 @@ export default function useSkills(filters) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Todo Pranav: call fetchSkills(filters), populate skills/loading/error
+    setLoading(true);
+    fetchSkills(filters)
+      .then((data) => {
+        setSkills(data);
+        setError(null);
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
   }, [filters]);
 
   return { skills, loading, error };

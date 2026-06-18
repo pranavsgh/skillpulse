@@ -2,14 +2,14 @@ import axios from "axios";
 
 const client = axios.create({ baseURL: "/api" });
 
-export function fetchSkills(params) {
-  // Todo Pranav: GET /skills/ with job_type + category + limit params
-  throw new Error("not implemented");
+export async function fetchSkills(params) {
+  const res = await client.get("/skills/", { params });
+  return res.data;
 }
 
-export function fetchJobs(params) {
-  // Todo Pranav: GET /jobs/ with job_type + source + search + skip + limit params
-  throw new Error("not implemented");
+export async function fetchJobs(params) {
+  const res = await client.get("/jobs/", { params });
+  return res.data;
 }
 
 export async function sendChatMessage(message, targetRole) {

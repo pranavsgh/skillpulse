@@ -8,7 +8,15 @@ export default function useJobs(filters) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Todo Pranav: call fetchJobs(filters), populate jobs/total/loading/error
+    setLoading(true);
+    fetchJobs(filters)
+      .then((data) => {
+        setJobs(data.jobs);
+        setTotal(data.total);
+        setError(null);
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
   }, [filters]);
 
   return { jobs, total, loading, error };
