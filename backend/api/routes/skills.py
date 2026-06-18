@@ -1,7 +1,7 @@
 """GET /api/skills with job_type + category filters."""
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import desc
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from backend.api.deps import get_db
@@ -18,18 +18,29 @@ def list_skills(
     limit: int = Query(default=20),
     db: Session = Depends(get_db),
 ):
+    latest_date = db.query(func.max(SkillCount.snapshot_date)).scalar()
+    if latest_date is None:
+        return []
+
+    count_sum = func.sum(SkillCount.count)
     query = (
-        db.query(Skill, SkillCount)
+        db.query(Skill.name, Skill.category, count_sum.label("count"))
         .join(SkillCount, SkillCount.skill_id == Skill.id)
+        .filter(SkillCount.snapshot_date == latest_date)
     )
     if job_type:
         query = query.filter(SkillCount.job_type == job_type)
     if category:
         query = query.filter(Skill.category == category)
 
-    rows = query.order_by(desc(SkillCount.count)).limit(limit).all()
+    rows = (
+        query.group_by(Skill.id, Skill.name, Skill.category)
+        .order_by(count_sum.desc())
+        .limit(limit)
+        .all()
+    )
 
     return [
-        SkillOut(name=skill.name, category=skill.category.value, count=sc.count)
-        for skill, sc in rows
+        SkillOut(name=name, category=skill_category.value, count=count)
+        for name, skill_category, count in rows
     ]
