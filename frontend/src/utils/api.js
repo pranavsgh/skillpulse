@@ -36,4 +36,9 @@ export async function deleteSession(sessionId) {
   return res.data;
 }
 
+export async function triggerScrape() {
+  const res = await client.post("/scraper/run");
+  return res.data;
+}
+
 export default client;
