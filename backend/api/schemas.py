@@ -1,5 +1,4 @@
 """Pydantic request/response models."""
-
 from pydantic import BaseModel
 
 
@@ -29,9 +28,9 @@ class JobListOut(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     target_role: str | None = None
+    session_id: str | None = None
 
 
 class ChatResponse(BaseModel):
     reply: str
-
-# Todo Both: tighten types (datetime instead of str, etc.) once routes are implemented
+    session_id: str

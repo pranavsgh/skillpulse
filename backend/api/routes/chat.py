@@ -1,6 +1,8 @@
 """POST /api/chat proxying to Claude API."""
 
 import os
+import uuid
+from datetime import datetime
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -12,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from backend.api.deps import get_db
 from backend.api.schemas import ChatRequest, ChatResponse
-from backend.db.models import JobType, Skill, SkillCount
+from backend.db.models import Conversation, JobType, Skill, SkillCount
 
 router = APIRouter()
 
@@ -44,9 +46,7 @@ def build_context(db: Session) -> str:
         if not rows:
             continue
         label = "New Grad" if job_type == JobType.new_grad else "Internship"
-        skills_str = ", ".join(
-            f"{skill.name} ({sc.count})" for sc, skill in rows
-        )
+        skills_str = ", ".join(f"{skill.name} ({sc.count})" for sc, skill in rows)
         lines.append(f"Top skills for {label} roles: {skills_str}")
 
     if not lines:
@@ -54,18 +54,39 @@ def build_context(db: Session) -> str:
     return "\n".join(lines)
 
 
+def get_or_create_conversation(db: Session, session_id: str) -> Conversation:
+    convo = db.query(Conversation).filter_by(session_id=session_id).first()
+    if not convo:
+        convo = Conversation(session_id=session_id, messages=[], updated_at=datetime.utcnow())
+        db.add(convo)
+        db.flush()
+    return convo
+
+
 @router.post("/", response_model=ChatResponse)
 def chat(payload: ChatRequest, db: Session = Depends(get_db)):
+    session_id = payload.session_id or str(uuid.uuid4())
+
     context = build_context(db)
     system = SYSTEM_PROMPT_TEMPLATE.format(context=context)
-
     if payload.target_role:
         system += f"\n\nThe user is targeting: {payload.target_role} roles."
+
+    convo = get_or_create_conversation(db, session_id)
+    history = list(convo.messages or [])
+    history.append({"role": "user", "content": payload.message})
 
     response = _get_client().messages.create(
         model="claude-sonnet-4-6",
         max_tokens=1024,
         system=system,
-        messages=[{"role": "user", "content": payload.message}],
+        messages=history,
     )
-    return ChatResponse(reply=response.content[0].text)
+    reply = response.content[0].text
+
+    history.append({"role": "assistant", "content": reply})
+    convo.messages = history
+    convo.updated_at = datetime.utcnow()
+    db.commit()
+
+    return ChatResponse(reply=reply, session_id=session_id)

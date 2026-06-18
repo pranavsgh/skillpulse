@@ -1,10 +1,22 @@
 import { useState } from "react";
 import { sendChatMessage } from "../utils/api.js";
 
+const SESSION_KEY = "skillpulse-session-id";
+
+function getOrCreateSessionId() {
+  let id = localStorage.getItem(SESSION_KEY);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(SESSION_KEY, id);
+  }
+  return id;
+}
+
 export default function useChat() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [targetRole, setTargetRole] = useState("");
+  const [sessionId] = useState(getOrCreateSessionId);
 
   async function send(message) {
     if (!message.trim()) return;
@@ -13,7 +25,7 @@ export default function useChat() {
     setLoading(true);
 
     try {
-      const reply = await sendChatMessage(message, targetRole);
+      const { reply } = await sendChatMessage(message, targetRole, sessionId);
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
     } catch (err) {
       setMessages((prev) => [

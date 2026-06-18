@@ -1,8 +1,8 @@
-"""ORM models: Job, Skill, SkillCount, job_skills association."""
+"""ORM models: Job, Skill, SkillCount, job_skills association, Conversation."""
 
 import enum
 
-from sqlalchemy import Column, Integer, String, Text, Enum, DateTime, Date, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, Text, Enum, DateTime, Date, ForeignKey, Table, JSON
 from sqlalchemy.orm import relationship
 
 from backend.db.database import Base
@@ -67,5 +67,14 @@ class SkillCount(Base):
     snapshot_date = Column(Date)
 
     skill = relationship("Skill")
+
+
+class Conversation(Base):
+    __tablename__ = "conversations"
+
+    id = Column(Integer, primary_key=True)
+    session_id = Column(String, unique=True, nullable=False, index=True)
+    messages = Column(JSON, default=list)
+    updated_at = Column(DateTime)
 
 # Todo Both: review indexes (e.g. on Job.job_type, Job.source) once query patterns are known
