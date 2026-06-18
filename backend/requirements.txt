@@ -5,6 +5,7 @@ sqlalchemy
 psycopg2-binary
 requests
 anthropic
+google-genai
 loguru
 apscheduler
 python-dotenv
