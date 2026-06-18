@@ -1,13 +1,13 @@
 """Manual scraper trigger."""
 
-<<<<<<< HEAD
 from dotenv import load_dotenv
 load_dotenv()
-=======
+
+from datetime import date
 from backend.db.database import SessionLocal
-from backend.db.models import Job, JobType, Source
+from backend.db.models import Job, JobType, Source, SkillCount, job_skills
 from backend.pipeline.extractor import extract_skills
-from backend.scrapers import simplify, indeed, linkedin
+from backend.scrapers import simplify, indeed
 
 
 def persist_job(db, job: dict) -> None:
@@ -28,10 +28,34 @@ def persist_job(db, job: dict) -> None:
     db.add(db_job)
 
 
+def rebuild_skill_counts(db) -> None:
+    """Recount skills from all jobs and repopulate skill_counts."""
+    print("Rebuilding skill counts...")
+    db.query(SkillCount).delete()
+    db.flush()
+
+    jobs = db.query(Job).all()
+    counts: dict[tuple, int] = {}
+    for job in jobs:
+        for skill in job.skills:
+            key = (skill.id, job.job_type)
+            counts[key] = counts.get(key, 0) + 1
+
+    for (skill_id, job_type), count in counts.items():
+        db.add(SkillCount(
+            skill_id=skill_id,
+            job_type=job_type,
+            count=count,
+            snapshot_date=date.today(),
+        ))
+    db.flush()
+    print(f"  {len(counts)} skill/job_type combinations indexed.")
+
+
 def main():
     db = SessionLocal()
     try:
-        for scraper in (simplify, indeed, linkedin):
+        for scraper in (simplify, indeed):
             print(f"Running {scraper.__name__}...")
             try:
                 jobs = scraper.scrape()
@@ -43,13 +67,12 @@ def main():
                 persist_job(db, job)
             db.commit()
             print(f"  {len(jobs)} jobs scraped.")
+
+        rebuild_skill_counts(db)
+        db.commit()
     finally:
         db.close()
->>>>>>> origin/Pranav
 
-from backend.scrapers.scheduler import run_all
 
 if __name__ == "__main__":
-    print("Running all scrapers...")
-    run_all()
-    print("Done.")
+    main()
