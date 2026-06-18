@@ -17,6 +17,14 @@ QUERIES = [
     "new grad software developer",
     "junior software engineer",
     "computer science internship",
+    "data analyst new grad",
+    "data analyst intern",
+    "cybersecurity new grad",
+    "cybersecurity internship",
+    "quantitative analyst new grad",
+    "quant internship",
+    "machine learning engineer new grad",
+    "machine learning internship",
 ]
 
 RSS_URL_TEMPLATE = "https://www.indeed.com/rss?q={query}&sort=date"
