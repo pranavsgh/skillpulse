@@ -12,9 +12,12 @@ export function fetchJobs(params) {
   throw new Error("not implemented");
 }
 
-export function sendChatMessage(message, targetRole) {
-  // Todo Mutha: POST /chat/ with { message, target_role }
-  throw new Error("not implemented");
+export async function sendChatMessage(message, targetRole) {
+  const res = await client.post("/chat/", {
+    message,
+    target_role: targetRole || null,
+  });
+  return res.data.reply;
 }
 
 export default client;

@@ -1,15 +1,11 @@
 """Manual scraper trigger."""
 
-from backend.scrapers import simplify, indeed, linkedin
+from dotenv import load_dotenv
+load_dotenv()
 
-
-def main():
-    # Todo Both: call each scraper, persist results via db session,
-    # run extractor/classifier on new jobs
-    for scraper in (simplify, indeed, linkedin):
-        print(f"Running {scraper.__name__}...")
-        scraper.scrape()
-
+from backend.scrapers.scheduler import run_all
 
 if __name__ == "__main__":
-    main()
+    print("Running all scrapers...")
+    run_all()
+    print("Done.")
