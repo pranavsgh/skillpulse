@@ -55,3 +55,7 @@ npm run dev
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/API.md](docs/API.md), and [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for more.
 
 This is an in-progress scaffold — most logic is stubbed with `Todo Pranav` / `Todo Mutha` / `Todo Both` markers pointing to who owns each piece.
+
+## Contributors
+- Muthamizh Arrasu Kamaraj — Frontend, AI/Chat, Deployment
+- Pranav — Backend, API, Database
