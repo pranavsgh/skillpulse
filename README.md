@@ -60,3 +60,4 @@ This is an in-progress scaffold — most logic is stubbed with `Todo Pranav` / `
 - Muthamizh Arrasu Kamaraj — Frontend, AI/Chat, Deployment
 - Pranav — Backend, API, Database
 
+ 
