@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { fetchSkills } from "../utils/api.js";
 
-export default function useSkills(filters) {
+export default function useSkills(filters, refreshKey = 0) {
   const [skills, setSkills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -15,7 +15,7 @@ export default function useSkills(filters) {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [filters]);
+  }, [filters, refreshKey]);
 
   return { skills, loading, error };
 }
