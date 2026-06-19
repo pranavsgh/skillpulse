@@ -28,7 +28,7 @@ export default function SkillChart({ skills = [] }) {
   const top = skills.slice(0, 15);
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-4 mb-6">
+    <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-gray-800">Top Skills by Job Postings</h3>
         <div className="flex gap-3 text-xs">

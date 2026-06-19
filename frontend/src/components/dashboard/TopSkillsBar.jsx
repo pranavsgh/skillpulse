@@ -9,7 +9,7 @@ export default function TopSkillsBar({ skills = [], onSkillClick }) {
   const max = skills[0]?.count || 1;
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-4">
+    <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
       <h3 className="font-semibold text-gray-800 mb-4">Skill Rankings</h3>
       <div className="space-y-3">
         {skills.map((s, i) => {

@@ -10,7 +10,7 @@ import { triggerScrape, fetchJobs, fetchStats } from "../utils/api.js";
 
 function StatCard({ label, value, sub }) {
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-4 flex flex-col gap-1">
+    <div className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col gap-1 shadow-sm hover:shadow-md transition-shadow">
       <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">{label}</p>
       <p className="text-3xl font-bold text-pulse-800">{value?.toLocaleString() ?? "—"}</p>
       {sub && <p className="text-xs text-gray-400">{sub}</p>}
@@ -103,7 +103,7 @@ export default function Dashboard() {
       </div>
 
       {skills[0] && (
-        <div className="bg-pulse-600 text-white rounded-xl p-4 mb-6 flex items-center justify-between">
+        <div className="bg-pulse-600 text-white rounded-lg p-4 mb-6 flex items-center justify-between shadow-sm">
           <div>
             <p className="text-xs font-medium opacity-75 uppercase tracking-wide flex items-center gap-1">
               <Flame size={14} /> Most In-Demand Skill

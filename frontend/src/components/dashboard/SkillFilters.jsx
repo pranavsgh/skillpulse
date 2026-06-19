@@ -8,7 +8,7 @@ export default function SkillFilters({ filters, onChange }) {
       <select
         value={filters.job_type || ""}
         onChange={(e) => handle("job_type", e.target.value)}
-        className="border rounded px-2 py-1"
+        className="border border-gray-300 rounded-md px-2 py-1.5 text-sm bg-white shadow-sm focus:outline-none focus:ring-1 focus:ring-pulse-600"
       >
         <option value="">All job types</option>
         <option value="new_grad">New Grad</option>
@@ -17,7 +17,7 @@ export default function SkillFilters({ filters, onChange }) {
       <select
         value={filters.category || ""}
         onChange={(e) => handle("category", e.target.value)}
-        className="border rounded px-2 py-1"
+        className="border border-gray-300 rounded-md px-2 py-1.5 text-sm bg-white shadow-sm focus:outline-none focus:ring-1 focus:ring-pulse-600"
       >
         <option value="">All categories</option>
         <option value="language">Language</option>
