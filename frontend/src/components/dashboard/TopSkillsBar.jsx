@@ -1,3 +1,7 @@
+import { useState, useEffect } from "react";
+import { useUser } from "@clerk/clerk-react";
+import { getSavedSkills, saveSkill, unsaveSkill } from "../../utils/api.js";
+
 const CATEGORY_COLORS = {
   language: { bg: "bg-pulse-100", bar: "bg-pulse-600", badge: "bg-pulse-100 text-pulse-700" },
   framework: { bg: "bg-sky-100", bar: "bg-sky-500", badge: "bg-sky-100 text-sky-700" },
@@ -5,15 +9,38 @@ const CATEGORY_COLORS = {
 };
 
 export default function TopSkillsBar({ skills = [], onSkillClick }) {
+  const { user } = useUser();
+  const [saved, setSaved] = useState(new Set());
+
+  useEffect(() => {
+    if (!user) return;
+    getSavedSkills(user.id)
+      .then((data) => setSaved(new Set(data.map((s) => s.skill_name))))
+      .catch(() => {});
+  }, [user]);
+
+  async function toggleSave(e, skillName) {
+    e.stopPropagation();
+    if (!user) return;
+    if (saved.has(skillName)) {
+      await unsaveSkill(user.id, skillName);
+      setSaved((prev) => { const n = new Set(prev); n.delete(skillName); return n; });
+    } else {
+      await saveSkill(user.id, skillName);
+      setSaved((prev) => new Set([...prev, skillName]));
+    }
+  }
+
   if (!skills.length) return null;
   const max = skills[0]?.count || 1;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+    <div className="bg-white border border-gray-100 rounded-xl p-4">
       <h3 className="font-semibold text-gray-800 mb-4">Skill Rankings</h3>
       <div className="space-y-3">
         {skills.map((s, i) => {
           const colors = CATEGORY_COLORS[s.category] || CATEGORY_COLORS.language;
+          const isSaved = saved.has(s.name);
           return (
             <div
               key={`${s.name}-${i}`}
@@ -32,7 +59,13 @@ export default function TopSkillsBar({ skills = [], onSkillClick }) {
                 />
               </div>
               <span className="text-xs text-gray-500 w-8 text-right">{s.count}</span>
-              <span className="text-gray-300 text-xs">›</span>
+              <button
+                onClick={(e) => toggleSave(e, s.name)}
+                className={`text-base transition-all ${isSaved ? "text-yellow-400" : "text-gray-300 hover:text-yellow-300"}`}
+                title={isSaved ? "Remove from saved" : "Save skill"}
+              >
+                {isSaved ? "★" : "☆"}
+              </button>
             </div>
           );
         })}

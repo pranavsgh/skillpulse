@@ -1,4 +1,4 @@
-"""ORM models: Job, Skill, SkillCount, job_skills association, Conversation."""
+"""ORM models: Job, Skill, SkillCount, job_skills association, Conversation, SavedSkill."""
 
 import enum
 
@@ -93,3 +93,12 @@ class Conversation(Base):
     owner_id = Column(String, nullable=True, index=True)
     messages = Column(JSON, default=list)
     updated_at = Column(DateTime)
+
+
+class SavedSkill(Base):
+    __tablename__ = "saved_skills"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String, nullable=False, index=True)
+    skill_name = Column(String, nullable=False)
+    saved_at = Column(DateTime)

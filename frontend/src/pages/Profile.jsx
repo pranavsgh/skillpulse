@@ -1,6 +1,7 @@
 import { useUser } from "@clerk/clerk-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { getSavedSkills, unsaveSkill } from "../utils/api.js";
 
 const PREFS_KEY = "skillpulse-user-prefs";
 
@@ -16,6 +17,7 @@ export default function Profile() {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(null);
   const [saved, setSaved] = useState(false);
+  const [savedSkills, setSavedSkills] = useState([]);
 
   useEffect(() => {
     const stored = localStorage.getItem(PREFS_KEY);
@@ -25,6 +27,16 @@ export default function Profile() {
       setDraft(p);
     }
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    getSavedSkills(user.id).then(setSavedSkills).catch(() => {});
+  }, [user]);
+
+  async function handleUnsave(skillName) {
+    await unsaveSkill(user.id, skillName);
+    setSavedSkills((prev) => prev.filter((s) => s.skill_name !== skillName));
+  }
 
   function toggleLanguage(lang) {
     setDraft((prev) => ({
@@ -104,7 +116,6 @@ export default function Profile() {
           </div>
         ) : (
           <div className="space-y-5">
-            {/* Target role */}
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Target Role</p>
               {editing ? (
@@ -126,7 +137,6 @@ export default function Profile() {
               )}
             </div>
 
-            {/* Experience level */}
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Experience Level</p>
               {editing ? (
@@ -148,7 +158,6 @@ export default function Profile() {
               )}
             </div>
 
-            {/* Languages */}
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Known Languages</p>
               {editing ? (
@@ -174,7 +183,6 @@ export default function Profile() {
               )}
             </div>
 
-            {/* Company type */}
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Target Company</p>
               {editing ? (
@@ -195,6 +203,26 @@ export default function Profile() {
                 <span className="bg-emerald-100 text-emerald-700 text-sm px-3 py-1 rounded-full">{prefs?.company || "—"}</span>
               )}
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* Saved Skills */}
+      <div className="bg-white border border-gray-100 rounded-xl p-6 mb-6">
+        <h2 className="font-semibold text-gray-800 mb-4">Saved Skills</h2>
+        {savedSkills.length === 0 ? (
+          <p className="text-sm text-gray-400">No saved skills yet. Star skills on the dashboard to save them.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {savedSkills.map((s) => (
+              <div key={s.skill_name} className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-full px-3 py-1">
+                <span className="text-sm text-gray-700">{s.skill_name}</span>
+                <button
+                  onClick={() => handleUnsave(s.skill_name)}
+                  className="text-gray-400 hover:text-red-400 text-xs ml-1"
+                >✕</button>
+              </div>
+            ))}
           </div>
         )}
       </div>
