@@ -4,7 +4,7 @@
 
 | Member | Owns |
 |--------|------|
-| Pranav | Simplify scraper, `/skills` + `/jobs` API endpoints, skills dashboard page, job listings page |
+| Pranav | Simplify scraper, `/skills` + `/jobs` API endpoints, skills dashboard page |
 | Mutha | Cron scheduler, `/chat` API + Claude proxy, chatbot UI page, landing page |
 | Both | Skill extraction pipeline, database schema, React app scaffold |
 

@@ -23,7 +23,7 @@ Scrapes CS new grad and internship postings from Simplify to surface trending la
 
 | Member | Owns |
 |--------|------|
-| Pranav | Simplify scraper, `/skills` + `/jobs` API endpoints, skills dashboard page, job listings page |
+| Pranav | Simplify scraper, `/skills` + `/jobs` API endpoints, skills dashboard page |
 | Mutha | Cron scheduler, `/chat` API + Claude proxy, chatbot UI page, landing page |
 | Both | Skill extraction pipeline, database schema, React app scaffold |
 
@@ -31,7 +31,7 @@ Scrapes CS new grad and internship postings from Simplify to surface trending la
 
 ```
 backend/      FastAPI app, scrapers, skill extraction pipeline, db models
-frontend/     React + Vite + Tailwind dashboard, jobs page, chat UI
+frontend/     React + Vite + Tailwind dashboard, chat UI
 scripts/      DB setup + manual scraper trigger
 docs/         architecture, API reference, contributing guide
 ```

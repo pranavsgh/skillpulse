@@ -9,7 +9,6 @@ export default function Navbar() {
       <NavLink to="/" className="text-lg font-bold text-pulse-800">SkillPulse</NavLink>
       <div className="flex gap-2">
         <NavLink to="/dashboard" className={linkClass}>Dashboard</NavLink>
-        <NavLink to="/jobs" className={linkClass}>Jobs</NavLink>
         <NavLink to="/chat" className={linkClass}>Project Advisor</NavLink>
         <NavLink to="/about" className={linkClass}>About</NavLink>
       </div>
