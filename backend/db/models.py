@@ -80,4 +80,12 @@ class Conversation(Base):
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
 
+
+class BriefGeneration(Base):
+    __tablename__ = "brief_generations"
+
+    id = Column(Integer, primary_key=True)
+    owner_id = Column(String, nullable=True, index=True)
+    created_at = Column(DateTime)
+
 # Todo Both: review indexes (e.g. on Job.job_type, Job.source) once query patterns are known

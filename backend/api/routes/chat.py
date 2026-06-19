@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 
 from backend.api.deps import get_db, get_owner_id
 from backend.api.schemas import BriefRequest, BriefResponse, ChatRequest, ChatResponse
-from backend.db.models import Conversation, JobType, Skill, SkillCount
+from backend.db.models import BriefGeneration, Conversation, JobType, Skill, SkillCount
 
 router = APIRouter()
 
@@ -76,6 +76,7 @@ def _check_rate_limit(session_id: str) -> None:
 
 MAX_NEW_CHATS_PER_DAY = 10
 MAX_MESSAGES_PER_CHAT_PER_DAY = 50
+MAX_BRIEFS_PER_DAY = 5
 
 
 def _today_start() -> datetime:
@@ -109,6 +110,22 @@ def _check_daily_message_limit(messages: list[dict]) -> None:
             status_code=429,
             detail=f"This chat has hit today's limit of {MAX_MESSAGES_PER_CHAT_PER_DAY} messages. "
             "Start a new chat, or come back tomorrow.",
+        )
+
+
+def _check_daily_brief_limit(db: Session, owner_id: str | None) -> None:
+    if not owner_id:
+        return
+    count = (
+        db.query(BriefGeneration)
+        .filter(BriefGeneration.owner_id == owner_id, BriefGeneration.created_at >= _today_start())
+        .count()
+    )
+    if count >= MAX_BRIEFS_PER_DAY:
+        raise HTTPException(
+            status_code=429,
+            detail=f"You've generated {MAX_BRIEFS_PER_DAY} project briefs today — that's today's "
+            "limit. Try again tomorrow.",
         )
 
 
@@ -234,6 +251,8 @@ def generate_brief(
     if not convo:
         raise HTTPException(status_code=404, detail="Session not found")
 
+    _check_daily_brief_limit(db, owner_id)
+
     try:
         response = _get_client().messages.create(
             model="claude-sonnet-4-6",
@@ -246,6 +265,9 @@ def generate_brief(
             status_code=503,
             detail="The AI service is temporarily unavailable. Please try again shortly.",
         ) from exc
+
+    db.add(BriefGeneration(owner_id=owner_id, created_at=datetime.utcnow()))
+    db.commit()
 
     return BriefResponse(brief=response.content[0].text)
 
