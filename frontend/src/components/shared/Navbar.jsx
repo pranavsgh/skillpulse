@@ -19,6 +19,9 @@ export default function Navbar() {
         <NavLink to="/dashboard" className={linkClass}>Dashboard</NavLink>
         <NavLink to="/chat" className={linkClass}>Project Advisor</NavLink>
         <NavLink to="/about" className={linkClass}>About</NavLink>
+        <SignedIn>
+          <NavLink to="/profile" className={linkClass}>Profile</NavLink>
+        </SignedIn>
         <div className="ml-3">
           <SignedIn>
             <UserButton afterSignOutUrl="/" />
