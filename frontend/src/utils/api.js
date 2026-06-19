@@ -11,9 +11,20 @@ function getOrCreateDeviceId() {
   return id;
 }
 
-const client = axios.create({
-  baseURL: "/api",
-  headers: { "X-Device-Id": getOrCreateDeviceId() },
+// Set once the Clerk user resolves (see ClerkUserSync). Falls back to the
+// browser-scoped device id for signed-out/public requests so two different
+// logged-in users on the same browser never share an owner identity.
+let currentUserId = null;
+
+export function setCurrentUserId(id) {
+  currentUserId = id;
+}
+
+const client = axios.create({ baseURL: "/api" });
+
+client.interceptors.request.use((config) => {
+  config.headers["X-Device-Id"] = currentUserId || getOrCreateDeviceId();
+  return config;
 });
 
 export async function fetchSkills(params) {
