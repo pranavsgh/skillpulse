@@ -1,19 +1,17 @@
 """Manual scraper trigger."""
-
 from dotenv import load_dotenv
 load_dotenv()
 
 from datetime import date
 from backend.db.database import SessionLocal
-from backend.db.models import Job, JobType, Source, SkillCount, job_skills
+from backend.db.models import Job, JobType, Source, SkillCount
 from backend.pipeline.extractor import extract_skills
-from backend.scrapers import simplify
+from backend.scrapers import simplify, greenhouse
 
 
 def persist_job(db, job: dict) -> None:
     if db.query(Job).filter_by(url=job["url"]).first():
         return
-
     db_job = Job(
         title=job["title"],
         company=job["company"],
@@ -29,18 +27,15 @@ def persist_job(db, job: dict) -> None:
 
 
 def rebuild_skill_counts(db) -> None:
-    """Recount skills from all jobs and repopulate skill_counts."""
     print("Rebuilding skill counts...")
     db.query(SkillCount).delete()
     db.flush()
-
     jobs = db.query(Job).all()
     counts: dict[tuple, int] = {}
     for job in jobs:
         for skill in job.skills:
             key = (skill.id, job.job_type)
             counts[key] = counts.get(key, 0) + 1
-
     for (skill_id, job_type), count in counts.items():
         db.add(SkillCount(
             skill_id=skill_id,
@@ -60,7 +55,14 @@ def main():
         for job in jobs:
             persist_job(db, job)
         db.commit()
-        print(f"  {len(jobs)} jobs scraped.")
+        print(f"  {len(jobs)} jobs scraped from Simplify.")
+
+        print("Running greenhouse...")
+        gh_jobs = greenhouse.scrape()
+        for job in gh_jobs:
+            persist_job(db, job)
+        db.commit()
+        print(f"  {len(gh_jobs)} jobs scraped from Greenhouse.")
 
         rebuild_skill_counts(db)
         db.commit()
