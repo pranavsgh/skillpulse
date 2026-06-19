@@ -74,6 +74,44 @@ def _check_rate_limit(session_id: str) -> None:
         log.append(now)
 
 
+MAX_NEW_CHATS_PER_DAY = 10
+MAX_MESSAGES_PER_CHAT_PER_DAY = 50
+
+
+def _today_start() -> datetime:
+    now = datetime.utcnow()
+    return datetime(now.year, now.month, now.day)
+
+
+def _check_daily_chat_limit(db: Session, owner_id: str | None) -> None:
+    if not owner_id:
+        return
+    count = (
+        db.query(Conversation)
+        .filter(Conversation.owner_id == owner_id, Conversation.created_at >= _today_start())
+        .count()
+    )
+    if count >= MAX_NEW_CHATS_PER_DAY:
+        raise HTTPException(
+            status_code=429,
+            detail=f"You've started {MAX_NEW_CHATS_PER_DAY} chats today — that's today's limit. "
+            "Continue an existing chat, or try again tomorrow.",
+        )
+
+
+def _check_daily_message_limit(messages: list[dict]) -> None:
+    today_iso = _today_start().isoformat()
+    todays_count = sum(
+        1 for m in messages if m.get("role") == "user" and m.get("ts", "") >= today_iso
+    )
+    if todays_count >= MAX_MESSAGES_PER_CHAT_PER_DAY:
+        raise HTTPException(
+            status_code=429,
+            detail=f"This chat has hit today's limit of {MAX_MESSAGES_PER_CHAT_PER_DAY} messages. "
+            "Start a new chat, or come back tomorrow.",
+        )
+
+
 PROJECT_INTENT_PATTERNS = [
     r"\bproject(s)?\b",
     r"\bportfolio\b",
@@ -123,19 +161,23 @@ def build_context(db: Session) -> str:
     return "\n".join(lines)
 
 
-def get_or_create_conversation(db: Session, session_id: str, owner_id: str | None) -> Conversation:
+def get_or_create_conversation(
+    db: Session, session_id: str, owner_id: str | None
+) -> tuple[Conversation, bool]:
     convo = db.query(Conversation).filter_by(session_id=session_id).first()
     if not convo:
+        now = datetime.utcnow()
         convo = Conversation(
-            session_id=session_id, owner_id=owner_id, messages=[], updated_at=datetime.utcnow()
+            session_id=session_id, owner_id=owner_id, messages=[], created_at=now, updated_at=now
         )
         db.add(convo)
         db.flush()
-    elif convo.owner_id is None and owner_id is not None:
+        return convo, True
+    if convo.owner_id is None and owner_id is not None:
         # Orphaned conversation predating per-device ownership — claim it for this caller
         # so /sessions, /brief, etc. (which filter by owner_id) can find it going forward.
         convo.owner_id = owner_id
-    return convo
+    return convo, False
 
 
 @router.get("/sessions")
@@ -215,9 +257,14 @@ def chat(
     session_id = payload.session_id or str(uuid.uuid4())
     _check_rate_limit(session_id)
 
-    convo = get_or_create_conversation(db, session_id, owner_id)
+    is_new_session = db.query(Conversation).filter_by(session_id=session_id).first() is None
+    if is_new_session:
+        _check_daily_chat_limit(db, owner_id)
+
+    convo, _ = get_or_create_conversation(db, session_id, owner_id)
     history = list(convo.messages or [])
-    history.append({"role": "user", "content": payload.message})
+    _check_daily_message_limit(history)
+    history.append({"role": "user", "content": payload.message, "ts": datetime.utcnow().isoformat()})
 
     try:
         if is_project_related(payload.message):
@@ -256,7 +303,9 @@ def chat(
             detail="The AI service is temporarily unavailable. Please try again shortly.",
         ) from exc
 
-    history.append({"role": "assistant", "content": reply, "kind": kind})
+    history.append(
+        {"role": "assistant", "content": reply, "kind": kind, "ts": datetime.utcnow().isoformat()}
+    )
     convo.messages = history
     convo.updated_at = datetime.utcnow()
     db.commit()

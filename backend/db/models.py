@@ -77,6 +77,7 @@ class Conversation(Base):
     session_id = Column(String, unique=True, nullable=False, index=True)
     owner_id = Column(String, nullable=True, index=True)
     messages = Column(JSON, default=list)
+    created_at = Column(DateTime)
     updated_at = Column(DateTime)
 
 # Todo Both: review indexes (e.g. on Job.job_type, Job.source) once query patterns are known
