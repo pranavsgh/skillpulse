@@ -1,15 +1,37 @@
+const CATEGORY_COLORS = {
+  language: { bg: "bg-pulse-100", bar: "bg-pulse-600", badge: "bg-pulse-100 text-pulse-700" },
+  framework: { bg: "bg-sky-100", bar: "bg-sky-500", badge: "bg-sky-100 text-sky-700" },
+  tool: { bg: "bg-emerald-100", bar: "bg-emerald-500", badge: "bg-emerald-100 text-emerald-700" },
+};
+
 export default function TopSkillsBar({ skills = [] }) {
-  // Todo Pranav: horizontal bar ranking of top skills by count
+  if (!skills.length) return null;
+  const max = skills[0]?.count || 1;
+
   return (
-    <ul className="space-y-2">
-      {skills.map((s) => (
-        <li key={s.name} className="flex items-center gap-2">
-          <span className="w-32 text-sm">{s.name}</span>
-          <div className="flex-1 bg-pulse-100 h-3 rounded">
-            <div className="bg-pulse-600 h-3 rounded" style={{ width: `${s.count}%` }} />
-          </div>
-        </li>
-      ))}
-    </ul>
+    <div className="bg-white border border-gray-100 rounded-xl p-4">
+      <h3 className="font-semibold text-gray-800 mb-4">Skill Rankings</h3>
+      <div className="space-y-3">
+        {skills.map((s, i) => {
+          const colors = CATEGORY_COLORS[s.category] || CATEGORY_COLORS.language;
+          return (
+            <div key={`${s.name}-${i}`} className="flex items-center gap-3">
+              <span className="text-xs font-bold text-gray-400 w-5 text-right">{i + 1}</span>
+              <span className="w-28 text-sm font-medium text-gray-700 truncate">{s.name}</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${colors.badge}`}>
+                {s.category}
+              </span>
+              <div className={`flex-1 ${colors.bg} h-2.5 rounded-full overflow-hidden`}>
+                <div
+                  className={`${colors.bar} h-full rounded-full transition-all duration-500`}
+                  style={{ width: `${(s.count / max) * 100}%` }}
+                />
+              </div>
+              <span className="text-xs text-gray-500 w-8 text-right">{s.count}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

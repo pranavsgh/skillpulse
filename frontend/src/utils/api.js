@@ -41,4 +41,9 @@ export async function triggerScrape() {
   return res.data;
 }
 
+export async function fetchStats() {
+  const res = await client.get("/scraper/stats");
+  return res.data;
+}
+
 export default client;
