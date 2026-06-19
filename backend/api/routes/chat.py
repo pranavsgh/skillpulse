@@ -1,7 +1,6 @@
-"""POST /api/chat proxying to Claude API, with a Gemini fallback for off-topic requests."""
+"""POST /api/chat proxying to Claude API, with a Gemini fallback if Claude is unavailable."""
 
 import os
-import re
 import threading
 import time
 import uuid
@@ -14,7 +13,9 @@ load_dotenv()
 from anthropic import Anthropic, APIError as AnthropicAPIError
 from fastapi import APIRouter, Depends, HTTPException
 from google import genai
+from google.genai import types as genai_types
 from google.genai.errors import APIError as GeminiAPIError
+from loguru import logger
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
@@ -31,7 +32,11 @@ def _get_client() -> Anthropic:
 
 _gemini_client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 
-GEMINI_MODEL = "gemini-2.5-flash-lite"
+# Closest match to Claude Sonnet's quality available on this API key's quota
+# (2.5-pro has zero free-tier quota and 429s every call) — used only when
+# Claude itself is unavailable (overloaded/rate-limited/down), not for routine
+# traffic.
+GEMINI_FALLBACK_MODEL = "gemini-2.5-flash"
 
 SYSTEM_PROMPT_TEMPLATE = (
     "You are SkillPulse's AI project advisor. You have access to real-time data "
@@ -150,31 +155,15 @@ ALLOWED_PROMPTS = {
 }
 
 
-PROJECT_INTENT_PATTERNS = [
-    r"\bproject(s)?\b",
-    r"\bportfolio\b",
-    r"\bbuild\b",
-    r"\bidea(s)?\b",
-    r"\bsuggest\b",
-    r"\brecommend\b",
-    r"\bskill(s)?\b",
-    r"\blearn\b",
-    r"\bresume\b",
-    r"\bpractice\b",
-    r"\bwhat should i (build|make|create|do)\b",
-]
-
-
-def is_project_related(message: str) -> bool:
-    if message in ALLOWED_PROMPTS:
-        return True
-    return any(re.search(pattern, message, re.IGNORECASE) for pattern in PROJECT_INTENT_PATTERNS)
-
-
-def _call_gemini(message: str) -> str:
+def _call_gemini(system: str, history: list[dict]) -> str:
+    contents = [
+        {"role": "model" if m["role"] == "assistant" else "user", "parts": [{"text": m["content"]}]}
+        for m in history
+    ]
     response = _gemini_client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=message,
+        model=GEMINI_FALLBACK_MODEL,
+        contents=contents,
+        config=genai_types.GenerateContentConfig(system_instruction=system),
     )
     return response.text
 
@@ -314,44 +303,45 @@ def chat(
     _check_daily_message_limit(history)
     history.append({"role": "user", "content": payload.message, "ts": datetime.utcnow().isoformat()})
 
+    context = build_context(db)
+    system = SYSTEM_PROMPT_TEMPLATE.format(context=context)
+
+    if payload.target_role:
+        system += f"\n\nThe user is targeting: {payload.target_role} roles."
+
+    if payload.user_prefs:
+        prefs = payload.user_prefs
+        if prefs.get("role"):
+            system += f"\nTarget role: {prefs['role']}"
+        if prefs.get("level"):
+            system += f"\nExperience level: {prefs['level']}"
+        if prefs.get("languages"):
+            system += f"\nLanguages they already know: {', '.join(prefs['languages'])}"
+        if prefs.get("company"):
+            system += f"\nTarget company type: {prefs['company']}"
+
+    claude_messages = [{"role": m["role"], "content": m["content"]} for m in history]
+
     try:
-        if is_project_related(payload.message):
-            context = build_context(db)
-            system = SYSTEM_PROMPT_TEMPLATE.format(context=context)
+        response = _get_client().messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=1024,
+            system=system,
+            messages=claude_messages,
+        )
+        reply = response.content[0].text
+    except AnthropicAPIError:
+        logger.warning("Claude unavailable, falling back to {}", GEMINI_FALLBACK_MODEL)
+        try:
+            reply = _call_gemini(system, history)
+        except GeminiAPIError as exc:
+            raise HTTPException(
+                status_code=503,
+                detail="The AI service is temporarily unavailable. Please try again shortly.",
+            ) from exc
 
-            if payload.target_role:
-                system += f"\n\nThe user is targeting: {payload.target_role} roles."
-
-            if payload.user_prefs:
-                prefs = payload.user_prefs
-                if prefs.get("role"):
-                    system += f"\nTarget role: {prefs['role']}"
-                if prefs.get("level"):
-                    system += f"\nExperience level: {prefs['level']}"
-                if prefs.get("languages"):
-                    system += f"\nLanguages they already know: {', '.join(prefs['languages'])}"
-                if prefs.get("company"):
-                    system += f"\nTarget company type: {prefs['company']}"
-
-            claude_messages = [{"role": m["role"], "content": m["content"]} for m in history]
-            response = _get_client().messages.create(
-                model="claude-sonnet-4-6",
-                max_tokens=1024,
-                system=system,
-                messages=claude_messages,
-            )
-            reply = response.content[0].text
-            kind = "project"
-        else:
-            reply = _call_gemini(payload.message)
-            kind = "general"
-    except (AnthropicAPIError, GeminiAPIError) as exc:
-        raise HTTPException(
-            status_code=503,
-            detail="The AI service is temporarily unavailable. Please try again shortly.",
-        ) from exc
-
-    new_project = kind == "project" and payload.message in NEW_PROJECT_PROMPTS
+    kind = "project"
+    new_project = payload.message in NEW_PROJECT_PROMPTS
 
     history.append(
         {
