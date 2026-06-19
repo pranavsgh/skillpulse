@@ -37,6 +37,7 @@ class ChatResponse(BaseModel):
     reply: str
     session_id: str
     kind: str
+    new_project: bool
 
 
 class BriefRequest(BaseModel):

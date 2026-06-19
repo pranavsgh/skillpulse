@@ -27,7 +27,7 @@ export default function Chat() {
   const { messages, loading, send, targetRole, setTargetRole, clearMessages } = useChat(sessionId, prefs);
 
   const projectMessages = messages
-    .filter((m) => m.role === "assistant" && m.kind === "project")
+    .filter((m) => m.role === "assistant" && m.kind === "project" && m.new_project)
     .map((m) => m.content);
 
   // Load prefs and session scoped to this user

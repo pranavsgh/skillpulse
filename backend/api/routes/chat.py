@@ -129,6 +129,27 @@ def _check_daily_brief_limit(db: Session, owner_id: str | None) -> None:
         )
 
 
+# Chat input is restricted to these preset prompts (see ChatWindow.jsx) so token
+# usage stays bounded — enforced here too, not just in the UI, since the API is
+# reachable directly.
+# Of the allowed prompts, only these actually introduce a new project — the
+# rest elaborate on whichever project was already suggested. Used to flag
+# which assistant replies are real export candidates for the brief generator.
+NEW_PROJECT_PROMPTS = {
+    "Suggest a project idea for me",
+    "Suggest a different idea",
+}
+
+ALLOWED_PROMPTS = {
+    "Suggest a project idea for me",
+    "Go deeper on this idea",
+    "Suggest a different idea",
+    "Make it more advanced",
+    "Make it simpler",
+    "Why does this fit my profile?",
+}
+
+
 PROJECT_INTENT_PATTERNS = [
     r"\bproject(s)?\b",
     r"\bportfolio\b",
@@ -145,6 +166,8 @@ PROJECT_INTENT_PATTERNS = [
 
 
 def is_project_related(message: str) -> bool:
+    if message in ALLOWED_PROMPTS:
+        return True
     return any(re.search(pattern, message, re.IGNORECASE) for pattern in PROJECT_INTENT_PATTERNS)
 
 
@@ -276,6 +299,9 @@ def generate_brief(
 def chat(
     payload: ChatRequest, db: Session = Depends(get_db), owner_id: str | None = Depends(get_owner_id)
 ):
+    if payload.message not in ALLOWED_PROMPTS:
+        raise HTTPException(status_code=400, detail="Message must be one of the preset prompts.")
+
     session_id = payload.session_id or str(uuid.uuid4())
     _check_rate_limit(session_id)
 
@@ -325,11 +351,19 @@ def chat(
             detail="The AI service is temporarily unavailable. Please try again shortly.",
         ) from exc
 
+    new_project = kind == "project" and payload.message in NEW_PROJECT_PROMPTS
+
     history.append(
-        {"role": "assistant", "content": reply, "kind": kind, "ts": datetime.utcnow().isoformat()}
+        {
+            "role": "assistant",
+            "content": reply,
+            "kind": kind,
+            "new_project": new_project,
+            "ts": datetime.utcnow().isoformat(),
+        }
     )
     convo.messages = history
     convo.updated_at = datetime.utcnow()
     db.commit()
 
-    return ChatResponse(reply=reply, session_id=session_id, kind=kind)
+    return ChatResponse(reply=reply, session_id=session_id, kind=kind, new_project=new_project)

@@ -35,8 +35,8 @@ export default function useChat(sessionId, prefs) {
     setLoading(true);
 
     try {
-      const { reply, kind } = await sendChatMessage(message, targetRole, sessionId, prefs);
-      setMessages((prev) => [...prev, { role: "assistant", content: reply, kind }]);
+      const { reply, kind, new_project } = await sendChatMessage(message, targetRole, sessionId, prefs);
+      setMessages((prev) => [...prev, { role: "assistant", content: reply, kind, new_project }]);
     } catch (err) {
       setMessages((prev) => [
         ...prev,
