@@ -74,6 +74,7 @@ class Conversation(Base):
 
     id = Column(Integer, primary_key=True)
     session_id = Column(String, unique=True, nullable=False, index=True)
+    owner_id = Column(String, nullable=True, index=True)
     messages = Column(JSON, default=list)
     updated_at = Column(DateTime)
 

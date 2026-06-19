@@ -1,6 +1,20 @@
 import axios from "axios";
 
-const client = axios.create({ baseURL: "/api" });
+const DEVICE_ID_KEY = "skillpulse-device-id";
+
+function getOrCreateDeviceId() {
+  let id = localStorage.getItem(DEVICE_ID_KEY);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(DEVICE_ID_KEY, id);
+  }
+  return id;
+}
+
+const client = axios.create({
+  baseURL: "/api",
+  headers: { "X-Device-Id": getOrCreateDeviceId() },
+});
 
 export async function fetchSkills(params) {
   const res = await client.get("/skills/", { params });

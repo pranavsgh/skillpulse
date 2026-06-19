@@ -18,7 +18,7 @@ from google.genai.errors import APIError as GeminiAPIError
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
-from backend.api.deps import get_db
+from backend.api.deps import get_db, get_owner_id
 from backend.api.schemas import ChatRequest, ChatResponse
 from backend.db.models import Conversation, JobType, Skill, SkillCount
 
@@ -110,19 +110,24 @@ def build_context(db: Session) -> str:
     return "\n".join(lines)
 
 
-def get_or_create_conversation(db: Session, session_id: str) -> Conversation:
+def get_or_create_conversation(db: Session, session_id: str, owner_id: str | None) -> Conversation:
     convo = db.query(Conversation).filter_by(session_id=session_id).first()
     if not convo:
-        convo = Conversation(session_id=session_id, messages=[], updated_at=datetime.utcnow())
+        convo = Conversation(
+            session_id=session_id, owner_id=owner_id, messages=[], updated_at=datetime.utcnow()
+        )
         db.add(convo)
         db.flush()
     return convo
 
 
 @router.get("/sessions")
-def list_sessions(db: Session = Depends(get_db)):
+def list_sessions(db: Session = Depends(get_db), owner_id: str | None = Depends(get_owner_id)):
+    if not owner_id:
+        return []
     convos = (
         db.query(Conversation)
+        .filter_by(owner_id=owner_id)
         .order_by(desc(Conversation.updated_at))
         .all()
     )
@@ -138,16 +143,20 @@ def list_sessions(db: Session = Depends(get_db)):
 
 
 @router.get("/sessions/{session_id}")
-def get_session(session_id: str, db: Session = Depends(get_db)):
-    convo = db.query(Conversation).filter_by(session_id=session_id).first()
+def get_session(
+    session_id: str, db: Session = Depends(get_db), owner_id: str | None = Depends(get_owner_id)
+):
+    convo = db.query(Conversation).filter_by(session_id=session_id, owner_id=owner_id).first()
     if not convo:
         raise HTTPException(status_code=404, detail="Session not found")
     return {"session_id": convo.session_id, "messages": convo.messages or []}
 
 
 @router.delete("/sessions/{session_id}")
-def delete_session(session_id: str, db: Session = Depends(get_db)):
-    convo = db.query(Conversation).filter_by(session_id=session_id).first()
+def delete_session(
+    session_id: str, db: Session = Depends(get_db), owner_id: str | None = Depends(get_owner_id)
+):
+    convo = db.query(Conversation).filter_by(session_id=session_id, owner_id=owner_id).first()
     if not convo:
         raise HTTPException(status_code=404, detail="Session not found")
     db.delete(convo)
@@ -156,11 +165,13 @@ def delete_session(session_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=ChatResponse)
-def chat(payload: ChatRequest, db: Session = Depends(get_db)):
+def chat(
+    payload: ChatRequest, db: Session = Depends(get_db), owner_id: str | None = Depends(get_owner_id)
+):
     session_id = payload.session_id or str(uuid.uuid4())
     _check_rate_limit(session_id)
 
-    convo = get_or_create_conversation(db, session_id)
+    convo = get_or_create_conversation(db, session_id, owner_id)
     history = list(convo.messages or [])
     history.append({"role": "user", "content": payload.message})
 
