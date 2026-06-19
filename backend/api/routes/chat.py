@@ -29,7 +29,9 @@ def _get_client() -> Anthropic:
     return Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 
-_gemini_client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+def _get_gemini_client() -> genai.Client:
+    return genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
 
 GEMINI_MODEL = "gemini-2.5-flash-lite"
 
@@ -81,7 +83,7 @@ def is_project_related(message: str) -> bool:
 
 
 def _call_gemini(message: str) -> str:
-    response = _gemini_client.models.generate_content(
+    response = _get_gemini_client().models.generate_content(
         model=GEMINI_MODEL,
         contents=message,
     )
@@ -121,7 +123,6 @@ def get_or_create_conversation(db: Session, session_id: str) -> Conversation:
 
 @router.get("/sessions")
 def list_sessions(db: Session = Depends(get_db)):
-    """List all conversation sessions ordered by most recent."""
     convos = (
         db.query(Conversation)
         .order_by(desc(Conversation.updated_at))
@@ -140,7 +141,6 @@ def list_sessions(db: Session = Depends(get_db)):
 
 @router.get("/sessions/{session_id}")
 def get_session(session_id: str, db: Session = Depends(get_db)):
-    """Load messages for a specific session."""
     convo = db.query(Conversation).filter_by(session_id=session_id).first()
     if not convo:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -149,7 +149,6 @@ def get_session(session_id: str, db: Session = Depends(get_db)):
 
 @router.delete("/sessions/{session_id}")
 def delete_session(session_id: str, db: Session = Depends(get_db)):
-    """Delete a conversation session."""
     convo = db.query(Conversation).filter_by(session_id=session_id).first()
     if not convo:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -171,8 +170,20 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db)):
         if is_project_related(payload.message):
             context = build_context(db)
             system = SYSTEM_PROMPT_TEMPLATE.format(context=context)
+
             if payload.target_role:
                 system += f"\n\nThe user is targeting: {payload.target_role} roles."
+
+            if payload.user_prefs:
+                prefs = payload.user_prefs
+                if prefs.get("role"):
+                    system += f"\nTarget role: {prefs['role']}"
+                if prefs.get("level"):
+                    system += f"\nExperience level: {prefs['level']}"
+                if prefs.get("languages"):
+                    system += f"\nLanguages they already know: {', '.join(prefs['languages'])}"
+                if prefs.get("company"):
+                    system += f"\nTarget company type: {prefs['company']}"
 
             response = _get_client().messages.create(
                 model="claude-sonnet-4-6",

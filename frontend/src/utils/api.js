@@ -12,11 +12,12 @@ export async function fetchJobs(params) {
   return res.data;
 }
 
-export async function sendChatMessage(message, targetRole, sessionId) {
+export async function sendChatMessage(message, targetRole, sessionId, prefs) {
   const res = await client.post("/chat/", {
     message,
     target_role: targetRole || null,
     session_id: sessionId || null,
+    user_prefs: prefs || null,
   });
   return res.data;
 }

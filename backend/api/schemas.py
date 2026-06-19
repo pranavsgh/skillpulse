@@ -30,6 +30,7 @@ class ChatRequest(BaseModel):
     message: str
     target_role: str | None = None
     session_id: str | None = None
+    user_prefs: dict | None = None
 
 
 class ChatResponse(BaseModel):

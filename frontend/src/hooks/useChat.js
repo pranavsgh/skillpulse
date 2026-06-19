@@ -16,12 +16,11 @@ export function setCurrentSessionId(id) {
   localStorage.setItem(SESSION_KEY, id);
 }
 
-export default function useChat(sessionId) {
+export default function useChat(sessionId, prefs) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [targetRole, setTargetRole] = useState("");
 
-  // Load messages from DB when session changes
   useEffect(() => {
     if (!sessionId) return;
     fetchSession(sessionId)
@@ -36,7 +35,7 @@ export default function useChat(sessionId) {
     setLoading(true);
 
     try {
-      const { reply } = await sendChatMessage(message, targetRole, sessionId);
+      const { reply } = await sendChatMessage(message, targetRole, sessionId, prefs);
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
     } catch (err) {
       setMessages((prev) => [
