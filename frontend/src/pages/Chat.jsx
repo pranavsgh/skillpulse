@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Pencil, Download } from "lucide-react";
+import { useUser } from "@clerk/clerk-react";
 import useChat, { getOrCreateSessionId, setCurrentSessionId } from "../hooks/useChat.js";
 import ChatWindow from "../components/chat/ChatWindow.jsx";
 import RoleSelector from "../components/chat/RoleSelector.jsx";
@@ -7,29 +8,51 @@ import SessionSidebar from "../components/chat/SessionSidebar.jsx";
 import QuizModal from "../components/chat/QuizModal.jsx";
 import ExportBriefModal from "../components/chat/ExportBriefModal.jsx";
 
-const PREFS_KEY = "skillpulse-user-prefs";
+function getPrefsKey(userId) {
+  return `skillpulse-user-prefs-${userId}`;
+}
+
+function getSessionKey(userId) {
+  return `skillpulse-session-id-${userId}`;
+}
 
 export default function Chat() {
-  const [sessionId, setSessionId] = useState(getOrCreateSessionId);
+  const { user } = useUser();
+  const userId = user?.id;
+
+  const [sessionId, setSessionId] = useState(null);
   const [prefs, setPrefs] = useState(null);
   const [showQuiz, setShowQuiz] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const { messages, loading, send, targetRole, setTargetRole, clearMessages } = useChat(sessionId, prefs);
+
   const projectMessages = messages
     .filter((m) => m.role === "assistant" && m.kind === "project")
     .map((m) => m.content);
 
+  // Load prefs and session scoped to this user
   useEffect(() => {
-    const saved = localStorage.getItem(PREFS_KEY);
-    if (saved) {
-      setPrefs(JSON.parse(saved));
+    if (!userId) return;
+
+    const savedPrefs = localStorage.getItem(getPrefsKey(userId));
+    if (savedPrefs) {
+      const p = JSON.parse(savedPrefs);
+      setPrefs(p);
+      if (p.role) setTargetRole(p.role);
     } else {
       setShowQuiz(true);
     }
-  }, []);
+
+    let sid = localStorage.getItem(getSessionKey(userId));
+    if (!sid) {
+      sid = crypto.randomUUID();
+      localStorage.setItem(getSessionKey(userId), sid);
+    }
+    setSessionId(sid);
+  }, [userId]);
 
   function handleQuizComplete(answers) {
-    localStorage.setItem(PREFS_KEY, JSON.stringify(answers));
+    localStorage.setItem(getPrefsKey(userId), JSON.stringify(answers));
     setPrefs(answers);
     setShowQuiz(false);
     if (answers.role) setTargetRole(answers.role);
@@ -37,15 +60,19 @@ export default function Chat() {
 
   function handleNewChat() {
     const newId = crypto.randomUUID();
+    localStorage.setItem(getSessionKey(userId), newId);
     setCurrentSessionId(newId);
     setSessionId(newId);
     clearMessages();
   }
 
   function handleSelectSession(id) {
+    localStorage.setItem(getSessionKey(userId), id);
     setCurrentSessionId(id);
     setSessionId(id);
   }
+
+  if (!userId) return null;
 
   return (
     <>

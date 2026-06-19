@@ -3,8 +3,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getSavedSkills, unsaveSkill } from "../utils/api.js";
 
-const PREFS_KEY = "skillpulse-user-prefs";
-
 const ROLES = ["Backend", "Frontend", "Full Stack", "ML/AI", "Data Science", "Cybersecurity", "Mobile"];
 const LANGUAGES = ["Python", "Java", "JavaScript", "TypeScript", "C++", "C#", "Go", "Rust", "SQL", "R"];
 const COMPANIES = ["Big Tech", "Startup", "Fintech", "Any"];
@@ -20,13 +18,15 @@ export default function Profile() {
   const [savedSkills, setSavedSkills] = useState([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem(PREFS_KEY);
+    if (!user) return;
+    const key = `skillpulse-user-prefs-${user.id}`;
+    const stored = localStorage.getItem(key);
     if (stored) {
       const p = JSON.parse(stored);
       setPrefs(p);
       setDraft(p);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -48,7 +48,8 @@ export default function Profile() {
   }
 
   function handleSave() {
-    localStorage.setItem(PREFS_KEY, JSON.stringify(draft));
+    const key = `skillpulse-user-prefs-${user.id}`;
+    localStorage.setItem(key, JSON.stringify(draft));
     setPrefs(draft);
     setEditing(false);
     setSaved(true);
@@ -57,13 +58,8 @@ export default function Profile() {
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-10">
-      {/* User info */}
       <div className="flex items-center gap-4 mb-8">
-        <img
-          src={user?.imageUrl}
-          alt="avatar"
-          className="w-16 h-16 rounded-full border border-gray-200"
-        />
+        <img src={user?.imageUrl} alt="avatar" className="w-16 h-16 rounded-full border border-gray-200" />
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{user?.fullName}</h1>
           <p className="text-gray-500 text-sm">{user?.primaryEmailAddress?.emailAddress}</p>
@@ -73,29 +69,19 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Preferences */}
       <div className="bg-white border border-gray-100 rounded-xl p-6 mb-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="font-semibold text-gray-800">Career Preferences</h2>
           {!editing ? (
-            <button
-              onClick={() => setEditing(true)}
-              className="text-sm text-pulse-600 border border-pulse-200 px-3 py-1 rounded-full hover:bg-pulse-50"
-            >
+            <button onClick={() => setEditing(true)} className="text-sm text-pulse-600 border border-pulse-200 px-3 py-1 rounded-full hover:bg-pulse-50">
               Edit
             </button>
           ) : (
             <div className="flex gap-2">
-              <button
-                onClick={() => { setEditing(false); setDraft(prefs); }}
-                className="text-sm text-gray-500 border border-gray-200 px-3 py-1 rounded-full hover:bg-gray-50"
-              >
+              <button onClick={() => { setEditing(false); setDraft(prefs); }} className="text-sm text-gray-500 border border-gray-200 px-3 py-1 rounded-full hover:bg-gray-50">
                 Cancel
               </button>
-              <button
-                onClick={handleSave}
-                className="text-sm text-white bg-pulse-600 px-3 py-1 rounded-full hover:bg-pulse-800"
-              >
+              <button onClick={handleSave} className="text-sm text-white bg-pulse-600 px-3 py-1 rounded-full hover:bg-pulse-800">
                 Save
               </button>
             </div>
@@ -107,10 +93,7 @@ export default function Profile() {
         {!prefs && !editing ? (
           <div className="text-center py-6">
             <p className="text-gray-500 text-sm mb-3">No preferences set yet.</p>
-            <button
-              onClick={() => navigate("/chat")}
-              className="bg-pulse-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-pulse-800"
-            >
+            <button onClick={() => navigate("/chat")} className="bg-pulse-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-pulse-800">
               Take the quiz
             </button>
           </div>
@@ -121,13 +104,8 @@ export default function Profile() {
               {editing ? (
                 <div className="grid grid-cols-2 gap-2">
                   {ROLES.map((r) => (
-                    <button
-                      key={r}
-                      onClick={() => setDraft((p) => ({ ...p, role: r }))}
-                      className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
-                        draft?.role === r ? "bg-pulse-600 text-white border-pulse-600" : "bg-white text-gray-700 border-gray-200 hover:border-pulse-400"
-                      }`}
-                    >
+                    <button key={r} onClick={() => setDraft((p) => ({ ...p, role: r }))}
+                      className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${draft?.role === r ? "bg-pulse-600 text-white border-pulse-600" : "bg-white text-gray-700 border-gray-200 hover:border-pulse-400"}`}>
                       {r}
                     </button>
                   ))}
@@ -142,13 +120,8 @@ export default function Profile() {
               {editing ? (
                 <div className="flex flex-col gap-2">
                   {LEVELS.map((l) => (
-                    <button
-                      key={l}
-                      onClick={() => setDraft((p) => ({ ...p, level: l }))}
-                      className={`px-4 py-2 rounded-lg border text-sm font-medium text-left transition-all ${
-                        draft?.level === l ? "bg-pulse-600 text-white border-pulse-600" : "bg-white text-gray-700 border-gray-200 hover:border-pulse-400"
-                      }`}
-                    >
+                    <button key={l} onClick={() => setDraft((p) => ({ ...p, level: l }))}
+                      className={`px-4 py-2 rounded-lg border text-sm font-medium text-left transition-all ${draft?.level === l ? "bg-pulse-600 text-white border-pulse-600" : "bg-white text-gray-700 border-gray-200 hover:border-pulse-400"}`}>
                       {l}
                     </button>
                   ))}
@@ -163,13 +136,8 @@ export default function Profile() {
               {editing ? (
                 <div className="grid grid-cols-2 gap-2">
                   {LANGUAGES.map((lang) => (
-                    <button
-                      key={lang}
-                      onClick={() => toggleLanguage(lang)}
-                      className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
-                        draft?.languages?.includes(lang) ? "bg-pulse-600 text-white border-pulse-600" : "bg-white text-gray-700 border-gray-200 hover:border-pulse-400"
-                      }`}
-                    >
+                    <button key={lang} onClick={() => toggleLanguage(lang)}
+                      className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${draft?.languages?.includes(lang) ? "bg-pulse-600 text-white border-pulse-600" : "bg-white text-gray-700 border-gray-200 hover:border-pulse-400"}`}>
                       {lang}
                     </button>
                   ))}
@@ -188,13 +156,8 @@ export default function Profile() {
               {editing ? (
                 <div className="grid grid-cols-2 gap-2">
                   {COMPANIES.map((c) => (
-                    <button
-                      key={c}
-                      onClick={() => setDraft((p) => ({ ...p, company: c }))}
-                      className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
-                        draft?.company === c ? "bg-pulse-600 text-white border-pulse-600" : "bg-white text-gray-700 border-gray-200 hover:border-pulse-400"
-                      }`}
-                    >
+                    <button key={c} onClick={() => setDraft((p) => ({ ...p, company: c }))}
+                      className={`px-3 py-2 rounded-lg border text-sm font-medium transition-all ${draft?.company === c ? "bg-pulse-600 text-white border-pulse-600" : "bg-white text-gray-700 border-gray-200 hover:border-pulse-400"}`}>
                       {c}
                     </button>
                   ))}
@@ -207,7 +170,6 @@ export default function Profile() {
         )}
       </div>
 
-      {/* Saved Skills */}
       <div className="bg-white border border-gray-100 rounded-xl p-6 mb-6">
         <h2 className="font-semibold text-gray-800 mb-4">Saved Skills</h2>
         {savedSkills.length === 0 ? (
@@ -217,17 +179,13 @@ export default function Profile() {
             {savedSkills.map((s) => (
               <div key={s.skill_name} className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-full px-3 py-1">
                 <span className="text-sm text-gray-700">{s.skill_name}</span>
-                <button
-                  onClick={() => handleUnsave(s.skill_name)}
-                  className="text-gray-400 hover:text-red-400 text-xs ml-1"
-                >✕</button>
+                <button onClick={() => handleUnsave(s.skill_name)} className="text-gray-400 hover:text-red-400 text-xs ml-1">✕</button>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Quick links */}
       <div className="bg-white border border-gray-100 rounded-xl p-6">
         <h2 className="font-semibold text-gray-800 mb-4">Quick Links</h2>
         <div className="space-y-2">
