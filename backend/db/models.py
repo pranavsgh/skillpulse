@@ -1,4 +1,4 @@
-"""ORM models: Job, Skill, SkillCount, job_skills association, Conversation."""
+"""ORM models: Job, Skill, SkillCount, job_skills association, Conversation, SavedSkill."""
 
 import enum
 
@@ -13,6 +13,18 @@ class JobType(str, enum.Enum):
     internship = "internship"
 
 
+class RoleType(str, enum.Enum):
+    swe = "swe"
+    data = "data"
+    ml_ai = "ml_ai"
+    quant = "quant"
+    devops = "devops"
+    security = "security"
+    mobile = "mobile"
+    fullstack = "fullstack"
+    other = "other"
+
+
 class SkillCategory(str, enum.Enum):
     language = "language"
     framework = "framework"
@@ -22,6 +34,7 @@ class SkillCategory(str, enum.Enum):
 class Source(str, enum.Enum):
     simplify = "simplify"
     greenhouse = "greenhouse"
+    remoteok = "remoteok"
 
 
 job_skills = Table(
@@ -42,6 +55,7 @@ class Job(Base):
     url = Column(String, unique=True, nullable=False)
     description = Column(Text)
     job_type = Column(Enum(JobType), nullable=False)
+    role_type = Column(Enum(RoleType), nullable=True)
     source = Column(Enum(Source), nullable=False)
     scraped_at = Column(DateTime)
 
@@ -64,6 +78,7 @@ class SkillCount(Base):
     id = Column(Integer, primary_key=True)
     skill_id = Column(Integer, ForeignKey("skills.id"), nullable=False)
     job_type = Column(Enum(JobType), nullable=False)
+    role_type = Column(Enum(RoleType), nullable=True)
     count = Column(Integer, default=0)
     snapshot_date = Column(Date)
 
@@ -87,5 +102,14 @@ class BriefGeneration(Base):
     id = Column(Integer, primary_key=True)
     owner_id = Column(String, nullable=True, index=True)
     created_at = Column(DateTime)
+
+
+class SavedSkill(Base):
+    __tablename__ = "saved_skills"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String, nullable=False, index=True)
+    skill_name = Column(String, nullable=False)
+    saved_at = Column(DateTime)
 
 # Todo Both: review indexes (e.g. on Job.job_type, Job.source) once query patterns are known

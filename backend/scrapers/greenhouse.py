@@ -1,5 +1,6 @@
 """Greenhouse scraper - pulls jobs from public Greenhouse job board APIs."""
 
+import re
 from datetime import datetime, timezone
 import requests
 
@@ -20,6 +21,12 @@ CS_KEYWORDS = {
     "full stack", "data", "ml", "machine learning", "ai", "infrastructure",
     "platform", "devops", "sre", "security", "mobile", "ios", "android"
 }
+
+
+def strip_html(text: str) -> str:
+    text = re.sub(r'<[^>]+>', ' ', text)
+    text = text.replace('&lt;', '<').replace('&gt;', '>').replace('&amp;', '&').replace('&quot;', '"').replace('&#39;', "'")
+    return ' '.join(text.split())
 
 
 def fetch_company_jobs(company: str) -> list[dict]:
@@ -55,7 +62,7 @@ def parse_job(raw: dict, company: str) -> dict | None:
     if not is_cs_role(title):
         return None
 
-    content = raw.get("content", "")
+    content = strip_html(raw.get("content", ""))
     job_type = classify_job_type(title, content)
     if not job_type:
         return None
@@ -76,7 +83,7 @@ def parse_job(raw: dict, company: str) -> dict | None:
         "company": company.capitalize(),
         "location": location,
         "url": url,
-        "description": title + " " + content[:300],
+        "description": title + " " + content[:1000],
         "source": "greenhouse",
         "job_type": job_type,
         "scraped_at": datetime.now(timezone.utc),
