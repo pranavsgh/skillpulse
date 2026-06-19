@@ -4,7 +4,7 @@ const CATEGORY_COLORS = {
   tool: { bg: "bg-emerald-100", bar: "bg-emerald-500", badge: "bg-emerald-100 text-emerald-700" },
 };
 
-export default function TopSkillsBar({ skills = [] }) {
+export default function TopSkillsBar({ skills = [], onSkillClick }) {
   if (!skills.length) return null;
   const max = skills[0]?.count || 1;
 
@@ -15,7 +15,11 @@ export default function TopSkillsBar({ skills = [] }) {
         {skills.map((s, i) => {
           const colors = CATEGORY_COLORS[s.category] || CATEGORY_COLORS.language;
           return (
-            <div key={`${s.name}-${i}`} className="flex items-center gap-3">
+            <div
+              key={`${s.name}-${i}`}
+              className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 rounded-lg px-2 py-1 -mx-2 transition-all"
+              onClick={() => onSkillClick?.(s)}
+            >
               <span className="text-xs font-bold text-gray-400 w-5 text-right">{i + 1}</span>
               <span className="w-28 text-sm font-medium text-gray-700 truncate">{s.name}</span>
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${colors.badge}`}>
@@ -28,6 +32,7 @@ export default function TopSkillsBar({ skills = [] }) {
                 />
               </div>
               <span className="text-xs text-gray-500 w-8 text-right">{s.count}</span>
+              <span className="text-gray-300 text-xs">›</span>
             </div>
           );
         })}

@@ -3,6 +3,7 @@ import useSkills from "../hooks/useSkills.js";
 import SkillChart from "../components/dashboard/SkillChart.jsx";
 import SkillFilters from "../components/dashboard/SkillFilters.jsx";
 import TopSkillsBar from "../components/dashboard/TopSkillsBar.jsx";
+import SkillDetailPanel from "../components/dashboard/SkillDetailPanel.jsx";
 import Loading from "../components/shared/Loading.jsx";
 import { triggerScrape, fetchJobs, fetchStats } from "../utils/api.js";
 
@@ -23,6 +24,7 @@ export default function Dashboard() {
   const [scraping, setScraping] = useState(false);
   const [scrapeMsg, setScrapeMsg] = useState("");
   const [stats, setStats] = useState(null);
+  const [selectedSkill, setSelectedSkill] = useState(null);
 
   useEffect(() => {
     fetchStats().then(setStats).catch(() => {});
@@ -62,7 +64,6 @@ export default function Dashboard() {
     }
   }
 
-  // Split skills by job type for the two-column view
   const newGradSkills = skills.filter((_, i) => i % 2 === 0).slice(0, 10);
   const internSkills = skills.filter((_, i) => i % 2 !== 0).slice(0, 10);
 
@@ -70,7 +71,6 @@ export default function Dashboard() {
 
   return (
     <div className="px-6 py-8 max-w-6xl mx-auto">
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-pulse-900">Skills Dashboard</h1>
@@ -87,14 +87,12 @@ export default function Dashboard() {
 
       {scrapeMsg && <p className="text-sm text-pulse-600 mb-4">{scrapeMsg}</p>}
 
-      {/* Stat cards */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <StatCard label="Total Jobs Tracked" value={stats?.total} sub="from Simplify + Indeed" />
         <StatCard label="New Grad Roles" value={stats?.new_grad} sub="entry-level positions" />
         <StatCard label="Internship Roles" value={stats?.internship} sub="intern positions" />
       </div>
 
-      {/* Top skill callout */}
       {skills[0] && (
         <div className="bg-pulse-600 text-white rounded-xl p-4 mb-6 flex items-center justify-between">
           <div>
@@ -109,29 +107,28 @@ export default function Dashboard() {
       <SkillFilters filters={filters} onChange={setFilters} />
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
-      {/* Main chart */}
       <SkillChart skills={skills} />
 
-      {/* Split view */}
       <div className="grid grid-cols-2 gap-6 mb-6">
         <div>
           <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
             <span className="bg-pulse-100 text-pulse-700 text-xs px-2 py-0.5 rounded-full">New Grad</span>
             Top Skills
           </h3>
-          <TopSkillsBar skills={newGradSkills} />
+          <TopSkillsBar skills={newGradSkills} onSkillClick={setSelectedSkill} />
         </div>
         <div>
           <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
             <span className="bg-sky-100 text-sky-700 text-xs px-2 py-0.5 rounded-full">Internship</span>
             Top Skills
           </h3>
-          <TopSkillsBar skills={internSkills} />
+          <TopSkillsBar skills={internSkills} onSkillClick={setSelectedSkill} />
         </div>
       </div>
 
-      {/* Full rankings */}
-      <TopSkillsBar skills={skills} />
+      <TopSkillsBar skills={skills} onSkillClick={setSelectedSkill} />
+
+      <SkillDetailPanel skill={selectedSkill} onClose={() => setSelectedSkill(null)} />
     </div>
   );
 }
