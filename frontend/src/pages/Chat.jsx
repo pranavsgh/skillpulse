@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { Pencil } from "lucide-react";
+import { Pencil, Download } from "lucide-react";
 import useChat, { getOrCreateSessionId, setCurrentSessionId } from "../hooks/useChat.js";
 import ChatWindow from "../components/chat/ChatWindow.jsx";
 import RoleSelector from "../components/chat/RoleSelector.jsx";
 import SessionSidebar from "../components/chat/SessionSidebar.jsx";
 import QuizModal from "../components/chat/QuizModal.jsx";
+import ExportBriefModal from "../components/chat/ExportBriefModal.jsx";
 
 const PREFS_KEY = "skillpulse-user-prefs";
 
@@ -12,7 +13,11 @@ export default function Chat() {
   const [sessionId, setSessionId] = useState(getOrCreateSessionId);
   const [prefs, setPrefs] = useState(null);
   const [showQuiz, setShowQuiz] = useState(false);
+  const [showExport, setShowExport] = useState(false);
   const { messages, loading, send, targetRole, setTargetRole, clearMessages } = useChat(sessionId, prefs);
+  const projectMessages = messages
+    .filter((m) => m.role === "assistant" && m.kind === "project")
+    .map((m) => m.content);
 
   useEffect(() => {
     const saved = localStorage.getItem(PREFS_KEY);
@@ -45,6 +50,13 @@ export default function Chat() {
   return (
     <>
       {showQuiz && <QuizModal onComplete={handleQuizComplete} />}
+      {showExport && (
+        <ExportBriefModal
+          sessionId={sessionId}
+          projectMessages={projectMessages}
+          onClose={() => setShowExport(false)}
+        />
+      )}
       <div className="flex h-[calc(100vh-60px)]">
         <SessionSidebar
           currentSessionId={sessionId}
@@ -54,12 +66,21 @@ export default function Chat() {
         <div className="flex-1 px-6 py-8 max-w-2xl mx-auto w-full">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold text-pulse-900">Project Advisor</h1>
-            <button
-              onClick={() => setShowQuiz(true)}
-              className="text-xs text-pulse-600 border border-pulse-200 px-3 py-1 rounded-full hover:bg-pulse-50 flex items-center gap-1"
-            >
-              <Pencil size={12} /> Edit preferences
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowExport(true)}
+                disabled={projectMessages.length === 0}
+                className="text-xs text-pulse-600 border border-pulse-200 px-3 py-1 rounded-full hover:bg-pulse-50 flex items-center gap-1 disabled:opacity-40 disabled:hover:bg-white"
+              >
+                <Download size={12} /> Export to Claude Code
+              </button>
+              <button
+                onClick={() => setShowQuiz(true)}
+                className="text-xs text-pulse-600 border border-pulse-200 px-3 py-1 rounded-full hover:bg-pulse-50 flex items-center gap-1"
+              >
+                <Pencil size={12} /> Edit preferences
+              </button>
+            </div>
           </div>
           {prefs && (
             <div className="flex gap-2 flex-wrap mb-3">

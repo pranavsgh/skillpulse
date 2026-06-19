@@ -36,3 +36,12 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     reply: str
     session_id: str
+    kind: str
+
+
+class BriefRequest(BaseModel):
+    message: str
+
+
+class BriefResponse(BaseModel):
+    brief: str

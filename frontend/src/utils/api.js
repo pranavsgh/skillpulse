@@ -51,6 +51,11 @@ export async function deleteSession(sessionId) {
   return res.data;
 }
 
+export async function generateBrief(sessionId, message) {
+  const res = await client.post(`/chat/sessions/${sessionId}/brief`, { message });
+  return res.data;
+}
+
 export async function triggerScrape() {
   const res = await client.post("/scraper/run");
   return res.data;

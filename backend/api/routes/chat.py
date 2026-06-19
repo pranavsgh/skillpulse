@@ -19,7 +19,7 @@ from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from backend.api.deps import get_db, get_owner_id
-from backend.api.schemas import ChatRequest, ChatResponse
+from backend.api.schemas import BriefRequest, BriefResponse, ChatRequest, ChatResponse
 from backend.db.models import Conversation, JobType, Skill, SkillCount
 
 router = APIRouter()
@@ -37,7 +37,20 @@ SYSTEM_PROMPT_TEMPLATE = (
     "You are SkillPulse's AI project advisor. You have access to real-time data "
     "about which programming languages, frameworks, and tools are most in-demand "
     "for CS new grad and internship roles. Based on this data, suggest concrete "
-    "portfolio project ideas.\n\n{context}"
+    "portfolio project ideas.\n\n"
+    "When recommending a project, propose exactly ONE project idea per reply — never "
+    "a list of multiple options. Go deep on that single idea (overview, tech stack, why "
+    "it's relevant) instead of going wide. If the user wants a different idea, they'll "
+    "ask for one; only then suggest a different single project.\n\n{context}"
+)
+
+BRIEF_SYSTEM_PROMPT = (
+    "You turn a single project recommendation from a chat into a self-contained project "
+    "brief that a developer will hand directly to Claude Code (an AI coding agent) so it "
+    "can scaffold the project. Output clean Markdown with these sections: "
+    "# <Project Title>, ## Overview, ## Tech Stack, ## Core Features, "
+    "## Suggested File Structure, ## Acceptance Criteria. Be concrete and actionable. "
+    "Do not include conversational filler, follow-up questions, or anything outside the brief."
 )
 
 RATE_LIMIT_MAX_REQUESTS = 10
@@ -118,6 +131,10 @@ def get_or_create_conversation(db: Session, session_id: str, owner_id: str | Non
         )
         db.add(convo)
         db.flush()
+    elif convo.owner_id is None and owner_id is not None:
+        # Orphaned conversation predating per-device ownership — claim it for this caller
+        # so /sessions, /brief, etc. (which filter by owner_id) can find it going forward.
+        convo.owner_id = owner_id
     return convo
 
 
@@ -164,6 +181,33 @@ def delete_session(
     return {"deleted": session_id}
 
 
+@router.post("/sessions/{session_id}/brief", response_model=BriefResponse)
+def generate_brief(
+    session_id: str,
+    payload: BriefRequest,
+    db: Session = Depends(get_db),
+    owner_id: str | None = Depends(get_owner_id),
+):
+    convo = db.query(Conversation).filter_by(session_id=session_id, owner_id=owner_id).first()
+    if not convo:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    try:
+        response = _get_client().messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=1500,
+            system=BRIEF_SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": payload.message}],
+        )
+    except AnthropicAPIError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="The AI service is temporarily unavailable. Please try again shortly.",
+        ) from exc
+
+    return BriefResponse(brief=response.content[0].text)
+
+
 @router.post("/", response_model=ChatResponse)
 def chat(
     payload: ChatRequest, db: Session = Depends(get_db), owner_id: str | None = Depends(get_owner_id)
@@ -194,24 +238,27 @@ def chat(
                 if prefs.get("company"):
                     system += f"\nTarget company type: {prefs['company']}"
 
+            claude_messages = [{"role": m["role"], "content": m["content"]} for m in history]
             response = _get_client().messages.create(
                 model="claude-sonnet-4-6",
                 max_tokens=1024,
                 system=system,
-                messages=history,
+                messages=claude_messages,
             )
             reply = response.content[0].text
+            kind = "project"
         else:
             reply = _call_gemini(payload.message)
+            kind = "general"
     except (AnthropicAPIError, GeminiAPIError) as exc:
         raise HTTPException(
             status_code=503,
             detail="The AI service is temporarily unavailable. Please try again shortly.",
         ) from exc
 
-    history.append({"role": "assistant", "content": reply})
+    history.append({"role": "assistant", "content": reply, "kind": kind})
     convo.messages = history
     convo.updated_at = datetime.utcnow()
     db.commit()
 
-    return ChatResponse(reply=reply, session_id=session_id)
+    return ChatResponse(reply=reply, session_id=session_id, kind=kind)
