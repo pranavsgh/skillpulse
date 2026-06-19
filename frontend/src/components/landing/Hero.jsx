@@ -8,7 +8,7 @@ export default function Hero() {
         SkillPulse tracks new grad and internship postings to surface trending
         languages, frameworks, and tools — in real time.
       </p>
-      <Link to="/dashboard" className="inline-block mt-6 bg-pulse-600 text-white px-6 py-2 rounded">
+      <Link to="/dashboard" className="inline-block mt-6 bg-pulse-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-pulse-800">
         View Dashboard
       </Link>
     </section>

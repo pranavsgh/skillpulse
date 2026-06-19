@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Pencil } from "lucide-react";
 import useChat, { getOrCreateSessionId, setCurrentSessionId } from "../hooks/useChat.js";
 import ChatWindow from "../components/chat/ChatWindow.jsx";
 import RoleSelector from "../components/chat/RoleSelector.jsx";
@@ -55,9 +56,9 @@ export default function Chat() {
             <h1 className="text-2xl font-bold text-pulse-900">Project Advisor</h1>
             <button
               onClick={() => setShowQuiz(true)}
-              className="text-xs text-pulse-600 border border-pulse-200 px-3 py-1 rounded-full hover:bg-pulse-50"
+              className="text-xs text-pulse-600 border border-pulse-200 px-3 py-1 rounded-full hover:bg-pulse-50 flex items-center gap-1"
             >
-              ✏️ Edit preferences
+              <Pencil size={12} /> Edit preferences
             </button>
           </div>
           {prefs && (

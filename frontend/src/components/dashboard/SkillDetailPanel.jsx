@@ -1,3 +1,4 @@
+import { X, Check } from "lucide-react";
 import { getSkillMeta, DIFFICULTY_STYLES } from "../../data/skillMeta.js";
 
 export default function SkillDetailPanel({ skill, onClose }) {
@@ -13,7 +14,9 @@ export default function SkillDetailPanel({ skill, onClose }) {
             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${DIFFICULTY_STYLES[meta.difficulty]}`}>
               {meta.difficulty}
             </span>
-            <button onClick={onClose} className="text-white/70 hover:text-white text-xl leading-none">✕</button>
+            <button onClick={onClose} className="text-white/70 hover:text-white leading-none">
+              <X size={20} />
+            </button>
           </div>
           <h2 className="text-2xl font-bold capitalize">{skill.name}</h2>
           <p className="text-white/75 text-sm mt-1">{meta.blurb}</p>
@@ -45,7 +48,7 @@ export default function SkillDetailPanel({ skill, onClose }) {
             <ul className="space-y-2">
               {meta.prerequisites.map((p, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                  <span className="text-pulse-400 mt-0.5">✓</span>
+                  <Check size={14} className="text-pulse-400 mt-0.5 flex-shrink-0" />
                   {p}
                 </li>
               ))}

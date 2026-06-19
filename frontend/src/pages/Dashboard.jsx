@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { RefreshCw, Loader2, Flame } from "lucide-react";
 import useSkills from "../hooks/useSkills.js";
 import SkillChart from "../components/dashboard/SkillChart.jsx";
 import SkillFilters from "../components/dashboard/SkillFilters.jsx";
@@ -79,9 +80,17 @@ export default function Dashboard() {
         <button
           onClick={handleScrape}
           disabled={scraping}
-          className="bg-pulse-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-pulse-800 disabled:opacity-50 flex items-center gap-2"
+          className="bg-pulse-600 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-pulse-800 disabled:opacity-50 flex items-center gap-2"
         >
-          {scraping ? "⏳ Scraping..." : "🔄 Refresh Data"}
+          {scraping ? (
+            <>
+              <Loader2 size={16} className="animate-spin" /> Scraping...
+            </>
+          ) : (
+            <>
+              <RefreshCw size={16} /> Refresh Data
+            </>
+          )}
         </button>
       </div>
 
@@ -96,7 +105,9 @@ export default function Dashboard() {
       {skills[0] && (
         <div className="bg-pulse-600 text-white rounded-xl p-4 mb-6 flex items-center justify-between">
           <div>
-            <p className="text-xs font-medium opacity-75 uppercase tracking-wide">🔥 Most In-Demand Skill</p>
+            <p className="text-xs font-medium opacity-75 uppercase tracking-wide flex items-center gap-1">
+              <Flame size={14} /> Most In-Demand Skill
+            </p>
             <p className="text-2xl font-bold mt-1 capitalize">{skills[0].name}</p>
             <p className="text-sm opacity-75 mt-0.5">{skills[0].count} job postings mention this skill</p>
           </div>

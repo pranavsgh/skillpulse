@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { X } from "lucide-react";
 import { fetchSessions, deleteSession } from "../../utils/api.js";
 
 export default function SessionSidebar({ currentSessionId, onSelect, onNew }) {
@@ -23,11 +24,11 @@ export default function SessionSidebar({ currentSessionId, onSelect, onNew }) {
   }
 
   return (
-    <div className="w-64 border-r bg-pulse-50 flex flex-col h-full">
-      <div className="p-3 border-b">
+    <div className="w-64 border-r border-gray-200 bg-white flex flex-col h-full">
+      <div className="p-3 border-b border-gray-200">
         <button
           onClick={onNew}
-          className="w-full bg-pulse-600 text-white rounded px-3 py-2 text-sm font-medium hover:bg-pulse-800"
+          className="w-full bg-pulse-600 text-white rounded-full px-3 py-2 text-sm font-semibold hover:bg-pulse-800"
         >
           + New Chat
         </button>
@@ -50,9 +51,9 @@ export default function SessionSidebar({ currentSessionId, onSelect, onNew }) {
             </div>
             <button
               onClick={(e) => handleDelete(e, s.session_id)}
-              className="ml-2 text-gray-400 hover:text-red-500 text-xs flex-shrink-0"
+              className="ml-2 text-gray-400 hover:text-red-500 flex-shrink-0"
             >
-              ✕
+              <X size={14} />
             </button>
           </div>
         ))}

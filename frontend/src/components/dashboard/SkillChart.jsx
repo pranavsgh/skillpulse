@@ -1,7 +1,7 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 const CATEGORY_COLORS = {
-  language: "#534AB7",
+  language: "#0A66C2",
   framework: "#0ea5e9",
   tool: "#10b981",
 };
@@ -48,7 +48,7 @@ export default function SkillChart({ skills = [] }) {
             <Tooltip content={<CustomTooltip />} />
             <Bar dataKey="count" radius={[4, 4, 0, 0]}>
               {top.map((s, i) => (
-                <Cell key={i} fill={CATEGORY_COLORS[s.category] || "#534AB7"} />
+                <Cell key={i} fill={CATEGORY_COLORS[s.category] || "#0A66C2"} />
               ))}
             </Bar>
           </BarChart>
