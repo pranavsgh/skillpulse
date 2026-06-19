@@ -1,9 +1,6 @@
 """Skill extraction - keyword matching against job description text."""
-
 import re
-
 from sqlalchemy.orm import Session
-
 from backend.db.models import Skill, SkillCategory
 
 SKILL_DICTIONARY = {
@@ -28,7 +25,6 @@ SKILL_DICTIONARY = {
     "matlab": "language",
     "sas": "language",
     "vba": "language",
-
     # Frameworks & Libraries
     "react": "framework",
     "angular": "framework",
@@ -58,7 +54,6 @@ SKILL_DICTIONARY = {
     "nltk": "framework",
     "spacy": "framework",
     "quantlib": "framework",
-
     # Tools, Platforms & Databases
     "docker": "tool",
     "kubernetes": "tool",
@@ -103,7 +98,6 @@ SKILL_DICTIONARY = {
     "nessus": "tool",
     "burp suite": "tool",
     "kali linux": "tool",
-    "snort": "tool",
     "crowdstrike": "tool",
     "palo alto": "tool",
     "fortinet": "tool",
@@ -113,22 +107,27 @@ SKILL_DICTIONARY = {
     "firewall": "tool",
 }
 
+# Skills that need special patterns to avoid false positives
+SPECIAL_PATTERNS = {
+    "r": r"\b[Rr]\b(?!&|\s*and\s+[Dd])",  # exclude R&D
+    "go": r"\b[Gg]o\b(?!ogle|ogl|lang)",   # exclude Google, Golang handled separately
+}
+
+
 def extract_skills(description: str, db: Session) -> list[Skill]:
     if not description:
         return []
 
     extracted_skills = []
-
     for skill_name, skill_type in SKILL_DICTIONARY.items():
-        # Escape the skill name to handle special characters like c++ or next.js safely
-        escaped_skill = re.escape(skill_name)
+        if skill_name in SPECIAL_PATTERNS:
+            pattern = SPECIAL_PATTERNS[skill_name]
+        else:
+            escaped_skill = re.escape(skill_name)
+            pattern = rf"\b{escaped_skill}\b"
+            if skill_name.endswith(('+', '#')):
+                pattern = rf"\b{escaped_skill}"
 
-        # \b handles standard word boundaries, while adjusting for trailing symbols like + or #
-        pattern = rf"\b{escaped_skill}\b"
-        if skill_name.endswith(('+', '#')):
-            pattern = rf"\b{escaped_skill}"
-
-        # Perform a case-insensitive regex search
         if re.search(pattern, description, re.IGNORECASE):
             skill_obj = db.query(Skill).filter_by(name=skill_name).first()
             if skill_obj is None:

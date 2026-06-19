@@ -77,4 +77,19 @@ export async function fetchStats() {
   return res.data;
 }
 
+export async function getSavedSkills(userId) {
+  const res = await client.get(`/saved-skills/${userId}`);
+  return res.data;
+}
+
+export async function saveSkill(userId, skillName) {
+  const res = await client.post("/saved-skills/", { user_id: userId, skill_name: skillName });
+  return res.data;
+}
+
+export async function unsaveSkill(userId, skillName) {
+  const res = await client.delete(`/saved-skills/${userId}/${encodeURIComponent(skillName)}`);
+  return res.data;
+}
+
 export default client;
