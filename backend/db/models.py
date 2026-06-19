@@ -13,6 +13,18 @@ class JobType(str, enum.Enum):
     internship = "internship"
 
 
+class RoleType(str, enum.Enum):
+    swe = "swe"
+    data = "data"
+    ml_ai = "ml_ai"
+    quant = "quant"
+    devops = "devops"
+    security = "security"
+    mobile = "mobile"
+    fullstack = "fullstack"
+    other = "other"
+
+
 class SkillCategory(str, enum.Enum):
     language = "language"
     framework = "framework"
@@ -43,6 +55,7 @@ class Job(Base):
     url = Column(String, unique=True, nullable=False)
     description = Column(Text)
     job_type = Column(Enum(JobType), nullable=False)
+    role_type = Column(Enum(RoleType), nullable=True)
     source = Column(Enum(Source), nullable=False)
     scraped_at = Column(DateTime)
 
@@ -65,6 +78,7 @@ class SkillCount(Base):
     id = Column(Integer, primary_key=True)
     skill_id = Column(Integer, ForeignKey("skills.id"), nullable=False)
     job_type = Column(Enum(JobType), nullable=False)
+    role_type = Column(Enum(RoleType), nullable=True)
     count = Column(Integer, default=0)
     snapshot_date = Column(Date)
 
@@ -79,5 +93,3 @@ class Conversation(Base):
     owner_id = Column(String, nullable=True, index=True)
     messages = Column(JSON, default=list)
     updated_at = Column(DateTime)
-
-# Todo Both: review indexes (e.g. on Job.job_type, Job.source) once query patterns are known
