@@ -11,10 +11,14 @@ function getOrCreateDeviceId() {
   return id;
 }
 
-const client = axios.create({
-  baseURL: "/api",
-  headers: { "X-Device-Id": getOrCreateDeviceId() },
-});
+const client = axios.create({ baseURL: "/api" });
+
+// Set to device ID by default, overridden with Clerk user ID after login
+client.defaults.headers.common["X-Device-Id"] = getOrCreateDeviceId();
+
+export function setApiUserId(userId) {
+  client.defaults.headers.common["X-Device-Id"] = userId || getOrCreateDeviceId();
+}
 
 export async function fetchSkills(params) {
   const res = await client.get("/skills/", { params });

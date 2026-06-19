@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
+import { SignedIn, SignedOut, RedirectToSignIn, useUser } from "@clerk/clerk-react";
+import { useEffect } from "react";
 import Navbar from "./components/shared/Navbar.jsx";
 import Footer from "./components/shared/Footer.jsx";
 import Landing from "./pages/Landing.jsx";
@@ -7,6 +8,7 @@ import Dashboard from "./pages/Dashboard.jsx";
 import Chat from "./pages/Chat.jsx";
 import About from "./pages/About.jsx";
 import Profile from "./pages/Profile.jsx";
+import { setApiUserId } from "./utils/api.js";
 
 function ProtectedRoute({ children }) {
   return (
@@ -17,9 +19,18 @@ function ProtectedRoute({ children }) {
   );
 }
 
+function UserSync() {
+  const { user } = useUser();
+  useEffect(() => {
+    setApiUserId(user?.id || null);
+  }, [user?.id]);
+  return null;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
+      <UserSync />
       <Navbar />
       <Routes>
         <Route path="/" element={<Landing />} />
