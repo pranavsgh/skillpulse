@@ -22,6 +22,7 @@ class SkillCategory(str, enum.Enum):
 class Source(str, enum.Enum):
     simplify = "simplify"
     greenhouse = "greenhouse"
+    remoteok = "remoteok"
 
 
 job_skills = Table(

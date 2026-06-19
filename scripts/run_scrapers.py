@@ -6,7 +6,7 @@ from datetime import date
 from backend.db.database import SessionLocal
 from backend.db.models import Job, JobType, Source, SkillCount
 from backend.pipeline.extractor import extract_skills
-from backend.scrapers import simplify, greenhouse
+from backend.scrapers import simplify, greenhouse, remoteok
 
 
 def persist_job(db, job: dict) -> None:
@@ -63,6 +63,13 @@ def main():
             persist_job(db, job)
         db.commit()
         print(f"  {len(gh_jobs)} jobs scraped from Greenhouse.")
+
+        print("Running remoteok...")
+        ro_jobs = remoteok.scrape()
+        for job in ro_jobs:
+            persist_job(db, job)
+        db.commit()
+        print(f"  {len(ro_jobs)} jobs scraped from RemoteOK.")
 
         rebuild_skill_counts(db)
         db.commit()
