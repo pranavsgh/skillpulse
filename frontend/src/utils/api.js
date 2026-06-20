@@ -109,4 +109,9 @@ export async function completeProject(userId, projectId) {
   return res.data;
 }
 
+export async function fetchCompanies(params) {
+  const res = await client.get("/companies/", { params });
+  return res.data;
+}
+
 export default client;
