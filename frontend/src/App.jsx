@@ -10,6 +10,7 @@ import About from "./pages/About.jsx";
 import Profile from "./pages/Profile.jsx";
 import Companies from "./pages/Companies.jsx";
 import Roadmap from "./pages/Roadmap.jsx";
+import PremiumGate from "./components/shared/PremiumGate.jsx";
 import { setCurrentUserId } from "./utils/api.js";
 
 function ProtectedRoute({ children }) {
@@ -41,8 +42,8 @@ export default function App() {
         <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/companies" element={<ProtectedRoute><Companies /></ProtectedRoute>} />
-        <Route path="/roadmap" element={<ProtectedRoute><Roadmap /></ProtectedRoute>} />
-        <Route path="/roadmap/:projectId" element={<ProtectedRoute><Roadmap /></ProtectedRoute>} />
+        <Route path="/roadmap" element={<ProtectedRoute><PremiumGate feature="Learning Roadmaps"><Roadmap /></PremiumGate></ProtectedRoute>} />
+        <Route path="/roadmap/:projectId" element={<ProtectedRoute><PremiumGate feature="Learning Roadmaps"><Roadmap /></PremiumGate></ProtectedRoute>} />
       </Routes>
       <Footer />
     </BrowserRouter>

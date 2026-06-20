@@ -126,4 +126,9 @@ export async function fetchRoadmap(projectId, userId) {
   return res.data;
 }
 
+export async function checkPremium(userId) {
+  const res = await client.get(`/premium/${userId}`);
+  return res.data.premium;
+}
+
 export default client;
