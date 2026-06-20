@@ -57,6 +57,16 @@ def scrape() -> list[dict]:
         seen_urls.add(url)
         job_type = classify_job_type(title, description)
 
+        posted_at = None
+        date_str = raw.get("date")
+        if date_str:
+            try:
+                posted_at = datetime.fromisoformat(date_str)
+            except ValueError:
+                pass
+        elif raw.get("epoch"):
+            posted_at = datetime.fromtimestamp(raw["epoch"], tz=timezone.utc)
+
         jobs.append({
             "title": title,
             "company": raw.get("company", ""),
@@ -65,6 +75,7 @@ def scrape() -> list[dict]:
             "description": title + " " + " ".join(tags) + " " + description[:200],
             "source": "remoteok",
             "job_type": job_type,
+            "posted_at": posted_at,
             "scraped_at": datetime.now(timezone.utc),
         })
 

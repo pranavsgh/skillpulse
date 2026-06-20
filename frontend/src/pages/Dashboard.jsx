@@ -5,8 +5,9 @@ import SkillChart from "../components/dashboard/SkillChart.jsx";
 import SkillFilters from "../components/dashboard/SkillFilters.jsx";
 import TopSkillsBar from "../components/dashboard/TopSkillsBar.jsx";
 import SkillDetailPanel from "../components/dashboard/SkillDetailPanel.jsx";
+import JobsOverTimeChart from "../components/dashboard/JobsOverTimeChart.jsx";
 import Loading from "../components/shared/Loading.jsx";
-import { triggerScrape, fetchJobs, fetchStats } from "../utils/api.js";
+import { triggerScrape, fetchJobs, fetchStats, fetchJobsTimeseries } from "../utils/api.js";
 
 function StatCard({ label, value, sub }) {
   return (
@@ -26,9 +27,14 @@ export default function Dashboard() {
   const [scrapeMsg, setScrapeMsg] = useState("");
   const [stats, setStats] = useState(null);
   const [selectedSkill, setSelectedSkill] = useState(null);
+  const [timeseries, setTimeseries] = useState([]);
 
   useEffect(() => {
     fetchStats().then(setStats).catch(() => {});
+  }, [refreshKey]);
+
+  useEffect(() => {
+    fetchJobsTimeseries().then(setTimeseries).catch(() => {});
   }, [refreshKey]);
 
   async function handleScrape() {
@@ -114,6 +120,8 @@ export default function Dashboard() {
           <span className="text-5xl opacity-20 font-black">#1</span>
         </div>
       )}
+
+      <JobsOverTimeChart data={timeseries} />
 
       <SkillFilters filters={filters} onChange={setFilters} />
       {error && <p className="text-red-500 mb-4">{error}</p>}

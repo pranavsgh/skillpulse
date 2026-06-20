@@ -37,6 +37,11 @@ export async function fetchJobs(params) {
   return res.data;
 }
 
+export async function fetchJobsTimeseries(params) {
+  const res = await client.get("/jobs/timeseries", { params });
+  return res.data;
+}
+
 export async function sendChatMessage(message, targetRole, sessionId, prefs) {
   const res = await client.post("/chat/", {
     message,

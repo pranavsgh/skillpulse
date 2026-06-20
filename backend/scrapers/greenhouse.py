@@ -78,6 +78,14 @@ def parse_job(raw: dict, company: str) -> dict | None:
     elif isinstance(offices, dict):
         location = offices.get("name")
 
+    posted_at = None
+    first_published = raw.get("first_published")
+    if first_published:
+        try:
+            posted_at = datetime.fromisoformat(first_published)
+        except ValueError:
+            pass
+
     return {
         "title": title,
         "company": company.capitalize(),
@@ -86,6 +94,7 @@ def parse_job(raw: dict, company: str) -> dict | None:
         "description": title + " " + content[:1000],
         "source": "greenhouse",
         "job_type": job_type,
+        "posted_at": posted_at,
         "scraped_at": datetime.now(timezone.utc),
     }
 

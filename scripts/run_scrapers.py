@@ -11,7 +11,12 @@ from backend.scrapers import simplify, greenhouse, remoteok
 
 
 def persist_job(db, job: dict) -> None:
-    if db.query(Job).filter_by(url=job["url"]).first():
+    existing = db.query(Job).filter_by(url=job["url"]).first()
+    if existing:
+        # Backfill posted_at on rows scraped before we captured it, as long
+        # as the listing is still live on the source API.
+        if existing.posted_at is None and job.get("posted_at"):
+            existing.posted_at = job["posted_at"]
         return
     role_type = classify_role(job.get("title", ""))
     db_job = Job(
@@ -23,6 +28,7 @@ def persist_job(db, job: dict) -> None:
         job_type=JobType(job["job_type"]),
         role_type=role_type,
         source=Source(job["source"]),
+        posted_at=job.get("posted_at"),
         scraped_at=job["scraped_at"],
     )
     db_job.skills = extract_skills(job.get("description") or "", db)

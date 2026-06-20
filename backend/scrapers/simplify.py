@@ -16,6 +16,9 @@ def fetch_listings(url: str) -> list[dict]:
 
 def parse_listing(raw: dict) -> dict:
     locations = raw.get("locations") or []
+    posted_at = None
+    if raw.get("date_posted"):
+        posted_at = datetime.fromtimestamp(raw["date_posted"], tz=timezone.utc)
     return {
         "title": raw.get("title", ""),
         "company": raw.get("company_name", ""),
@@ -23,6 +26,7 @@ def parse_listing(raw: dict) -> dict:
         "url": raw.get("url") or raw.get("application_link"),
         "description": raw.get("title", ""),
         "source": "simplify",
+        "posted_at": posted_at,
         "scraped_at": datetime.now(timezone.utc),
     }
 

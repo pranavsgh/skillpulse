@@ -57,6 +57,7 @@ class Job(Base):
     job_type = Column(Enum(JobType), nullable=False)
     role_type = Column(Enum(RoleType), nullable=True)
     source = Column(Enum(Source), nullable=False)
+    posted_at = Column(DateTime, nullable=True)
     scraped_at = Column(DateTime)
 
     skills = relationship("Skill", secondary=job_skills, back_populates="jobs")
