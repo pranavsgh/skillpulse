@@ -19,9 +19,14 @@ class StartProjectRequest(BaseModel):
 
 
 def _derive_title(content: str) -> str:
-    heading = re.search(r"^#{1,3}\s+(.+)$", content, re.MULTILINE)
-    if heading:
-        return heading.group(1).strip()[:100]
+    # Try ## or ### heading first (actual project name, skip the generic h1)
+    h2 = re.search(r"^#{2,3}\s+(.+)$", content, re.MULTILINE)
+    if h2:
+        return h2.group(1).strip()[:100]
+    # Fall back to first # heading
+    h1 = re.search(r"^#\s+(.+)$", content, re.MULTILINE)
+    if h1:
+        return h1.group(1).strip()[:100]
     return content.strip().replace("\n", " ")[:80]
 
 
@@ -41,6 +46,7 @@ def list_projects(user_id: str, db: Session = Depends(get_db)):
             "status": p.status.value,
             "started_at": str(p.started_at),
             "completed_at": str(p.completed_at) if p.completed_at else None,
+            "has_roadmap": bool(getattr(p, "roadmap", None)),
         }
         for p in projects
     ]

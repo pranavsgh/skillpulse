@@ -11,9 +11,6 @@ function getOrCreateDeviceId() {
   return id;
 }
 
-// Set once the Clerk user resolves (see ClerkUserSync). Falls back to the
-// browser-scoped device id for signed-out/public requests so two different
-// logged-in users on the same browser never share an owner identity.
 let currentUserId = null;
 
 export function setCurrentUserId(id) {
@@ -116,6 +113,16 @@ export async function completeProject(userId, projectId) {
 
 export async function fetchCompanies(params) {
   const res = await client.get("/companies/", { params });
+  return res.data;
+}
+
+export async function generateRoadmap(payload) {
+  const res = await client.post("/roadmap/", payload);
+  return res.data;
+}
+
+export async function fetchRoadmap(projectId, userId) {
+  const res = await client.get(`/roadmap/project/${projectId}`, { params: { user_id: userId } });
   return res.data;
 }
 

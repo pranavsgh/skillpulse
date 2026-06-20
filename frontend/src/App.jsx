@@ -9,6 +9,7 @@ import Chat from "./pages/Chat.jsx";
 import About from "./pages/About.jsx";
 import Profile from "./pages/Profile.jsx";
 import Companies from "./pages/Companies.jsx";
+import Roadmap from "./pages/Roadmap.jsx";
 import { setCurrentUserId } from "./utils/api.js";
 
 function ProtectedRoute({ children }) {
@@ -20,16 +21,11 @@ function ProtectedRoute({ children }) {
   );
 }
 
-// Keeps api.js's request identity in sync with the signed-in Clerk user, so
-// backend ownership (chat sessions, etc.) is scoped per-account instead of
-// per-browser — two different users on the same machine never collide.
 function ClerkUserSync() {
   const { user } = useUser();
-
   useEffect(() => {
     setCurrentUserId(user?.id ?? null);
   }, [user?.id]);
-
   return null;
 }
 
@@ -45,6 +41,8 @@ export default function App() {
         <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/companies" element={<ProtectedRoute><Companies /></ProtectedRoute>} />
+        <Route path="/roadmap" element={<ProtectedRoute><Roadmap /></ProtectedRoute>} />
+        <Route path="/roadmap/:projectId" element={<ProtectedRoute><Roadmap /></ProtectedRoute>} />
       </Routes>
       <Footer />
     </BrowserRouter>

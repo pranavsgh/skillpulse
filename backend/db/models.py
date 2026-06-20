@@ -129,5 +129,6 @@ class UserProject(Base):
     status = Column(Enum(ProjectStatus), nullable=False, default=ProjectStatus.pending)
     started_at = Column(DateTime)
     completed_at = Column(DateTime)
+    roadmap = Column(Text, nullable=True)
 
 # Todo Both: review indexes (e.g. on Job.job_type, Job.source) once query patterns are known
