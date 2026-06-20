@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard.jsx";
 import Chat from "./pages/Chat.jsx";
 import About from "./pages/About.jsx";
 import Profile from "./pages/Profile.jsx";
+import Companies from "./pages/Companies.jsx";
 import { setApiUserId } from "./utils/api.js";
 
 function ProtectedRoute({ children }) {
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/companies" element={<ProtectedRoute><Companies /></ProtectedRoute>} />
       </Routes>
       <Footer />
     </BrowserRouter>

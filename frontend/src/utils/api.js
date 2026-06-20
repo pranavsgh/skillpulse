@@ -13,7 +13,6 @@ function getOrCreateDeviceId() {
 
 const client = axios.create({ baseURL: "/api" });
 
-// Set to device ID by default, overridden with Clerk user ID after login
 client.defaults.headers.common["X-Device-Id"] = getOrCreateDeviceId();
 
 export function setApiUserId(userId) {
@@ -82,6 +81,11 @@ export async function saveSkill(userId, skillName) {
 
 export async function unsaveSkill(userId, skillName) {
   const res = await client.delete(`/saved-skills/${userId}/${encodeURIComponent(skillName)}`);
+  return res.data;
+}
+
+export async function fetchCompanies(params) {
+  const res = await client.get("/companies/", { params });
   return res.data;
 }
 

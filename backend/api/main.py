@@ -5,7 +5,7 @@ load_dotenv()
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.api.routes import skills, jobs, chat, scraper, saved_skills
+from backend.api.routes import skills, jobs, chat, scraper, saved_skills, companies
 from backend.scrapers.scheduler import start as start_scheduler
 
 app = FastAPI(title="SkillPulse API")
@@ -23,6 +23,7 @@ app.include_router(jobs.router, prefix="/api/jobs", tags=["jobs"])
 app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
 app.include_router(scraper.router, prefix="/api/scraper", tags=["scraper"])
 app.include_router(saved_skills.router, prefix="/api/saved-skills", tags=["saved_skills"])
+app.include_router(companies.router, prefix="/api/companies", tags=["companies"])
 
 start_scheduler()
 
