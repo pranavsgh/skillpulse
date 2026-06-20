@@ -1,7 +1,7 @@
 import { useUser } from "@clerk/clerk-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getSavedSkills, unsaveSkill } from "../utils/api.js";
+import { getSavedSkills, unsaveSkill, fetchProjects, completeProject } from "../utils/api.js";
 
 const ROLES = ["Backend", "Frontend", "Full Stack", "ML/AI", "Data Science", "Cybersecurity", "Mobile"];
 const LANGUAGES = ["Python", "Java", "JavaScript", "TypeScript", "C++", "C#", "Go", "Rust", "SQL", "R"];
@@ -16,6 +16,7 @@ export default function Profile() {
   const [draft, setDraft] = useState(null);
   const [saved, setSaved] = useState(false);
   const [savedSkills, setSavedSkills] = useState([]);
+  const [projects, setProjects] = useState([]);
 
   useEffect(() => {
     if (!user) return;
@@ -33,9 +34,23 @@ export default function Profile() {
     getSavedSkills(user.id).then(setSavedSkills).catch(() => {});
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+    fetchProjects(user.id).then(setProjects).catch(() => {});
+  }, [user]);
+
   async function handleUnsave(skillName) {
     await unsaveSkill(user.id, skillName);
     setSavedSkills((prev) => prev.filter((s) => s.skill_name !== skillName));
+  }
+
+  async function handleCompleteProject(projectId) {
+    await completeProject(user.id, projectId);
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === projectId ? { ...p, status: "completed", completed_at: new Date().toISOString() } : p
+      )
+    );
   }
 
   function toggleLanguage(lang) {
@@ -182,6 +197,56 @@ export default function Profile() {
                 <button onClick={() => handleUnsave(s.skill_name)} className="text-gray-400 hover:text-red-400 text-xs ml-1">✕</button>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white border border-gray-100 rounded-xl p-6 mb-6">
+        <h2 className="font-semibold text-gray-800 mb-4">My Projects</h2>
+        {projects.length === 0 ? (
+          <p className="text-sm text-gray-400">
+            No projects started yet. Pick one from the Project Advisor chat.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {projects
+              .filter((p) => p.status === "pending")
+              .map((p) => (
+                <div
+                  key={p.id}
+                  className="flex items-center justify-between gap-3 px-4 py-3 bg-pulse-50 border border-pulse-100 rounded-lg"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">{p.title}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Started {new Date(p.started_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleCompleteProject(p.id)}
+                    className="text-xs text-white bg-pulse-600 px-3 py-1.5 rounded-full hover:bg-pulse-800 flex-shrink-0"
+                  >
+                    Mark as finished
+                  </button>
+                </div>
+              ))}
+            {projects.filter((p) => p.status === "completed").length > 0 && (
+              <div className="pt-2">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                  Completed
+                </p>
+                <div className="space-y-1.5">
+                  {projects
+                    .filter((p) => p.status === "completed")
+                    .map((p) => (
+                      <div key={p.id} className="flex items-center gap-2 px-1">
+                        <span className="text-emerald-500 text-xs">✓</span>
+                        <span className="text-sm text-gray-500 line-through">{p.title}</span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

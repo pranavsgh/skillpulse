@@ -92,4 +92,21 @@ export async function unsaveSkill(userId, skillName) {
   return res.data;
 }
 
+export async function fetchProjects(userId) {
+  const res = await client.get(`/projects/${userId}`);
+  return res.data;
+}
+
+export async function startProject(userId, content) {
+  const res = await client.post("/projects/", { user_id: userId, content });
+  return res.data;
+}
+
+export async function completeProject(userId, projectId) {
+  const res = await client.post(`/projects/${projectId}/complete`, null, {
+    params: { user_id: userId },
+  });
+  return res.data;
+}
+
 export default client;

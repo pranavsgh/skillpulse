@@ -80,6 +80,7 @@ export default function Chat() {
       {showExport && (
         <ExportBriefModal
           sessionId={sessionId}
+          userId={userId}
           projectMessages={projectMessages}
           onClose={() => setShowExport(false)}
         />

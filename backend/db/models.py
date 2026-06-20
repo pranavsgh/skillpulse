@@ -112,4 +112,21 @@ class SavedSkill(Base):
     skill_name = Column(String, nullable=False)
     saved_at = Column(DateTime)
 
+
+class ProjectStatus(str, enum.Enum):
+    pending = "pending"
+    completed = "completed"
+
+
+class UserProject(Base):
+    __tablename__ = "user_projects"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String, nullable=False, index=True)
+    title = Column(String, nullable=False)
+    content = Column(Text, nullable=False)
+    status = Column(Enum(ProjectStatus), nullable=False, default=ProjectStatus.pending)
+    started_at = Column(DateTime)
+    completed_at = Column(DateTime)
+
 # Todo Both: review indexes (e.g. on Job.job_type, Job.source) once query patterns are known

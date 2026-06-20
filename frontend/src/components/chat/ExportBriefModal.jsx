@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { generateBrief } from "../../utils/api.js";
+import { generateBrief, startProject } from "../../utils/api.js";
 
 function previewOf(content) {
   const stripped = content.replace(/[*#`]/g, "").trim();
@@ -26,9 +26,11 @@ function downloadMarkdown(filename, content) {
   URL.revokeObjectURL(url);
 }
 
-export default function ExportBriefModal({ sessionId, projectMessages, onClose }) {
+export default function ExportBriefModal({ sessionId, userId, projectMessages, onClose }) {
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [started, setStarted] = useState(false);
   const [error, setError] = useState("");
 
   async function handleGenerate() {
@@ -47,6 +49,19 @@ export default function ExportBriefModal({ sessionId, projectMessages, onClose }
     }
   }
 
+  async function handleStart() {
+    setStarting(true);
+    setError("");
+    try {
+      await startProject(userId, selected);
+      setStarted(true);
+    } catch {
+      setError("Couldn't start the project. Please try again.");
+    } finally {
+      setStarting(false);
+    }
+  }
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4 max-h-[80vh] flex flex-col">
@@ -62,7 +77,11 @@ export default function ExportBriefModal({ sessionId, projectMessages, onClose }
             {projectMessages.map((content, i) => (
               <button
                 key={i}
-                onClick={() => setSelected(content)}
+                onClick={() => {
+                  setSelected(content);
+                  setStarted(false);
+                  setError("");
+                }}
                 className={`block w-full text-left px-3 py-2 rounded-lg border text-sm transition-all ${
                   selected === content
                     ? "bg-pulse-600 text-white border-pulse-600"
@@ -76,18 +95,28 @@ export default function ExportBriefModal({ sessionId, projectMessages, onClose }
         )}
 
         {error && <p className="text-sm text-red-500 mt-3">{error}</p>}
+        {started && <p className="text-sm text-emerald-600 mt-3">Added to your profile as pending!</p>}
 
         <div className="flex justify-between items-center mt-6">
           <button onClick={onClose} className="text-sm text-gray-400 hover:text-gray-600">
             Cancel
           </button>
-          <button
-            onClick={handleGenerate}
-            disabled={!selected || loading}
-            className="bg-pulse-600 text-white px-6 py-2 rounded-full text-sm font-medium disabled:opacity-40 hover:bg-pulse-800"
-          >
-            {loading ? "Generating..." : "Generate .md"}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleStart}
+              disabled={!selected || starting || started}
+              className="border border-pulse-200 text-pulse-700 px-4 py-2 rounded-full text-sm font-medium disabled:opacity-40 hover:bg-pulse-50"
+            >
+              {started ? "Started" : starting ? "Starting..." : "Start this project"}
+            </button>
+            <button
+              onClick={handleGenerate}
+              disabled={!selected || loading}
+              className="bg-pulse-600 text-white px-6 py-2 rounded-full text-sm font-medium disabled:opacity-40 hover:bg-pulse-800"
+            >
+              {loading ? "Generating..." : "Generate .md"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
