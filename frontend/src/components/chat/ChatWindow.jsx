@@ -11,7 +11,7 @@ export const FOLLOWUP_PROMPTS = [
   "Why does this fit my profile?",
 ];
 
-export default function ChatWindow({ messages = [], loading, onSend }) {
+export default function ChatWindow({ messages = [], loading, onSend, startedIndexes, onStartProject }) {
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -30,7 +30,14 @@ export default function ChatWindow({ messages = [], loading, onSend }) {
           </p>
         )}
         {messages.map((m, i) => (
-          <MessageBubble key={i} role={m.role} content={m.content} />
+          <MessageBubble
+            key={i}
+            role={m.role}
+            content={m.content}
+            canStart={m.role === "assistant" && m.kind === "project" && m.new_project}
+            started={startedIndexes?.has(i)}
+            onStart={() => onStartProject(i, m.content)}
+          />
         ))}
         {loading && (
           <div className="text-sm text-gray-400 italic px-1">SkillPulse is thinking...</div>

@@ -7,6 +7,7 @@ import RoleSelector from "../components/chat/RoleSelector.jsx";
 import SessionSidebar from "../components/chat/SessionSidebar.jsx";
 import QuizModal from "../components/chat/QuizModal.jsx";
 import ExportBriefModal from "../components/chat/ExportBriefModal.jsx";
+import { startProject } from "../utils/api.js";
 
 function getPrefsKey(userId) {
   return `skillpulse-user-prefs-${userId}`;
@@ -24,11 +25,17 @@ export default function Chat() {
   const [prefs, setPrefs] = useState(null);
   const [showQuiz, setShowQuiz] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [startedIndexes, setStartedIndexes] = useState(new Set());
   const { messages, loading, send, targetRole, setTargetRole, clearMessages } = useChat(sessionId, prefs);
 
   const projectMessages = messages
     .filter((m) => m.role === "assistant" && m.kind === "project" && m.new_project)
     .map((m) => m.content);
+
+  async function handleStartProject(index, content) {
+    await startProject(userId, content);
+    setStartedIndexes((prev) => new Set(prev).add(index));
+  }
 
   // Load prefs and session scoped to this user
   useEffect(() => {
@@ -64,12 +71,14 @@ export default function Chat() {
     setCurrentSessionId(newId);
     setSessionId(newId);
     clearMessages();
+    setStartedIndexes(new Set());
   }
 
   function handleSelectSession(id) {
     localStorage.setItem(getSessionKey(userId), id);
     setCurrentSessionId(id);
     setSessionId(id);
+    setStartedIndexes(new Set());
   }
 
   if (!userId) return null;
@@ -80,7 +89,6 @@ export default function Chat() {
       {showExport && (
         <ExportBriefModal
           sessionId={sessionId}
-          userId={userId}
           projectMessages={projectMessages}
           onClose={() => setShowExport(false)}
         />
@@ -121,7 +129,13 @@ export default function Chat() {
             </div>
           )}
           <RoleSelector targetRole={targetRole} onChange={setTargetRole} />
-          <ChatWindow messages={messages} loading={loading} onSend={send} />
+          <ChatWindow
+            messages={messages}
+            loading={loading}
+            onSend={send}
+            startedIndexes={startedIndexes}
+            onStartProject={handleStartProject}
+          />
         </div>
       </div>
     </>

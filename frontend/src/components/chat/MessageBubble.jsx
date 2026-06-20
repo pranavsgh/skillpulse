@@ -1,4 +1,4 @@
-export default function MessageBubble({ role, content }) {
+export default function MessageBubble({ role, content, canStart, started, onStart }) {
   const isUser = role === "user";
 
   const formatted = content
@@ -19,12 +19,23 @@ export default function MessageBubble({ role, content }) {
           SP
         </span>
       )}
-      <div
-        className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-snug shadow-sm ${
-          isUser ? "bg-pulse-600 text-white" : "bg-gray-100 text-gray-800"
-        }`}
-      >
-        {isUser ? content : <span dangerouslySetInnerHTML={{ __html: formatted }} />}
+      <div className="max-w-[80%]">
+        <div
+          className={`rounded-2xl px-4 py-2.5 text-sm leading-snug shadow-sm ${
+            isUser ? "bg-pulse-600 text-white" : "bg-gray-100 text-gray-800"
+          }`}
+        >
+          {isUser ? content : <span dangerouslySetInnerHTML={{ __html: formatted }} />}
+        </div>
+        {canStart && (
+          <button
+            onClick={onStart}
+            disabled={started}
+            className="mt-2 text-xs font-medium text-pulse-700 border border-pulse-200 bg-white px-3 py-1.5 rounded-full hover:bg-pulse-50 disabled:opacity-50 disabled:hover:bg-white"
+          >
+            {started ? "✓ Started" : "Start this project"}
+          </button>
+        )}
       </div>
     </div>
   );
